@@ -775,6 +775,11 @@ html:not(.dark) .ocs-console-sidebar .pf-v6-c-nav {
 html .ocs-console-page.pf-v6-c-page {
   --pf-v6-c-page__main-section--PaddingBlockStart: 0;
   --pf-v6-c-page__main-section--PaddingBlockEnd: 0;
+  /* Unset filled strip backgrounds: main content, tabs row, and breadcrumb strip. */
+  --pf-v6-c-page__main-section--BackgroundColor: transparent;
+  --pf-v6-c-page__main-section--m-secondary--BackgroundColor: transparent;
+  --pf-v6-c-page__main-tabs--BackgroundColor: transparent;
+  --pf-v6-c-page__main-breadcrumb--BackgroundColor: transparent;
 }
 
 /** Home / stub PageSection, or any full-width app section without Breadcrumbs. */
