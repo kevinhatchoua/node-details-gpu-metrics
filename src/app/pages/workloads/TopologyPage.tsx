@@ -3,7 +3,7 @@ import {
   ZoomIn, ZoomOut, Maximize2, List, LayoutGrid, Search, Filter,
   ExternalLink, Globe, Box, Database, ChevronRight, X, MoreVertical,
   ArrowUpRight, RefreshCw, Layers, GitBranch, CheckCircle2, AlertTriangle,
-  XCircle, Clock, ChevronDown, Play, Pause, Trash2, Edit, Copy, Terminal
+  XCircle, Clock, ChevronDown, ChevronUp, Play, Pause, Trash2, Edit, Copy, Terminal
 } from "@/lib/pfIcons";
 import { useNavigate } from "react-router";
 import Breadcrumbs from "../../components/Breadcrumbs";
@@ -696,7 +696,7 @@ export default function TopologyPage() {
   return (
     <div className="flex flex-col h-full w-full">
       {/* Header */}
-      <div className="p-[24px] pb-0">
+      <div className="ocs-app-page-outer ocs-app-page-outer--pb-0">
         <Breadcrumbs
           items={[
             { label: "Home", path: "/" },
@@ -759,7 +759,7 @@ export default function TopologyPage() {
                 }`}>
               <Filter className="size-[14px]" />
               {filterKind === "all" ? "Filter" : filterKind}
-              <ChevronDown className="size-[12px]" />
+              {showFilterDropdown ? <ChevronUp className="size-[12px]" /> : <ChevronDown className="size-[12px]" />}
             </button>
             {showFilterDropdown && (
               <div className="absolute top-full mt-[4px] right-0 bg-white dark:bg-[#252525] rounded-[8px] shadow-xl border border-[rgba(0,0,0,0.15)] dark:border-[rgba(255,255,255,0.15)] py-[4px] min-w-[160px] z-20">

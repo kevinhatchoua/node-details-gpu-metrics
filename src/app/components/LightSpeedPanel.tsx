@@ -4,6 +4,7 @@ import { X, Send, ThumbsUp, ThumbsDown, Copy, Bookmark, Volume2, Paperclip, Spar
 import { useChat } from "../contexts/ChatContext";
 import { useNavigate, useLocation } from "react-router";
 import { getAIResponse } from "./LightSpeedPanelResponses";
+import { LightspeedHeaderNotice, LightspeedAiMessageFooter } from "./lightspeed/LightspeedLegalCopy";
 
 interface Message {
   id: string;
@@ -259,10 +260,12 @@ export default function LightSpeedPanel({
           </button>
         </div>
 
+        <LightspeedHeaderNotice />
+
         {/* ═══ MESSAGES ═══ */}
         <div
           ref={messagesScrollRef}
-          className="flex-1 overflow-y-auto px-[20px] py-[16px]"
+          className="flex-1 overflow-y-auto px-[20px] py-[16px] min-h-0"
           style={{ overscrollBehavior: "contain" }}
           role="log"
           aria-live="polite"
@@ -295,6 +298,9 @@ export default function LightSpeedPanel({
                   </div>
                   <div className="text-[14px] text-[#333] dark:text-[#e8e8e8] leading-[22px] font-['Red_Hat_Text:Regular',sans-serif] whitespace-pre-wrap">
                     {formatText(message.content || '')}
+                  </div>
+                  <div className="ml-0 max-w-full">
+                    <LightspeedAiMessageFooter />
                   </div>
 
                   {/* Suggestion action buttons */}

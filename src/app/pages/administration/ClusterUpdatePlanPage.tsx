@@ -56,7 +56,7 @@ import {
 import EllipsisVIcon from "@patternfly/react-icons/dist/esm/icons/ellipsis-v-icon";
 import { InnerScrollContainer, Table, Tbody, Td, Th, Thead, Tr } from "@patternfly/react-table";
 import { usePatternFlyGlassActive } from "@/lib/usePatternFlyGlassActive";
-import { ChevronDown, ChevronRight, ExternalLink, Sparkles, ArrowRight, CheckCircle, AlertTriangle, AlertCircle, HelpCircle, Info, X, Loader2, Shield, Bot, Settings, RotateCcw, Play, Pause, Calendar, Bell, Clock, FileText, User, Zap, Eye, RefreshCw, Check } from "@/lib/pfIcons";
+import { ExternalLink, Sparkles, ArrowRight, CheckCircle, AlertTriangle, AlertCircle, HelpCircle, Info, X, Loader2, Shield, Bot, Settings, RotateCcw, Play, Pause, Calendar, Bell, Clock, FileText, User, Zap, Eye, RefreshCw, Check } from "@/lib/pfIcons";
 import Breadcrumbs from "../../components/Breadcrumbs";
 import FavoriteButton from "../../components/FavoriteButton";
 import { AiAssessmentSection } from "../../components/AiAssessmentSection";
@@ -414,7 +414,7 @@ export default function ClusterUpdatePlanPage() {
         onClose={() => setChatbotOpen(false)}
         onAction={handleChatAction}
       >
-      <div>
+      <div className="ocs-app-page-outer flex-1 min-w-0 min-h-0 overflow-y-auto">
       <Breadcrumbs items={[
         { label: "Administration", path: "/administration/cluster-update" },
         { label: "Cluster Update" },

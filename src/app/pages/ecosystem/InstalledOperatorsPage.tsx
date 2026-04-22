@@ -805,8 +805,7 @@ export default function InstalledOperatorsPage() {
         onClose={() => setChatbotOpen(false)}
         onAction={handleChatAction}
       >
-      <div className="flex-1 min-h-0 min-w-0 overflow-y-auto">
-        <div className="p-[24px]">
+      <div className="ocs-app-page-outer flex-1 min-h-0 min-w-0 overflow-y-auto">
             <Breadcrumbs
               items={[
                 { label: "Home", path: "/" },
@@ -1302,7 +1301,6 @@ export default function InstalledOperatorsPage() {
             </DataView>
           </Flex>
             </Breadcrumbs>
-        </div>
       </div>
       </OlsChatbot>
 

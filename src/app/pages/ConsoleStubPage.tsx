@@ -50,7 +50,7 @@ export default function ConsoleStubPage() {
   const heading = useMemo(() => LABELS[pathname] ?? "Page", [pathname]);
 
   return (
-    <PageSection>
+    <PageSection padding={{ default: "noPadding" }} className="ocs-app-page-chrome">
       <Title headingLevel="h1">{heading}</Title>
       <Content className="pf-v6-u-mt-md">
         This view is a placeholder for the OpenShift console navigation in this prototype.

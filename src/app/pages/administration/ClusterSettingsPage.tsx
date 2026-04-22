@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { CheckCircle, AlertCircle, Clock, ExternalLink, ChevronDown, ChevronRight, Loader2 } from "@/lib/pfIcons";
+import { CheckCircle, AlertCircle, Clock, ExternalLink, ChevronDown, ChevronUp, Loader2 } from "@/lib/pfIcons";
 import { Link } from "react-router";
 import Breadcrumbs from "../../components/Breadcrumbs";
 import FavoriteButton from "../../components/FavoriteButton";
@@ -124,7 +124,7 @@ function ClusterOperatorsTab() {
               >
                 <td className="px-[16px] py-[10px]">
                   <div className="flex items-center gap-[6px]">
-                    {expandedOp === op.name ? <ChevronDown className="size-[14px] text-[#6a6e73]" /> : <ChevronRight className="size-[14px] text-[#6a6e73]" />}
+                    {expandedOp === op.name ? <ChevronUp className="size-[14px] text-[#6a6e73]" /> : <ChevronDown className="size-[14px] text-[#6a6e73]" />}
                     <span className="font-medium text-[#151515] dark:text-white">{op.name}</span>
                   </div>
                 </td>
@@ -243,7 +243,7 @@ export default function ClusterSettingsPage() {
   }, []);
 
   return (
-    <div className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden p-[24px] pb-[48px]">
+    <div className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden ocs-app-page-outer ocs-app-page-outer--end-3xl">
       <Breadcrumbs
         items={[
           { label: "Home", path: "/" },

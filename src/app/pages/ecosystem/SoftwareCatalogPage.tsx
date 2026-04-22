@@ -10,7 +10,7 @@ import {
 import {
   Search,
   ChevronDown,
-  ChevronRight,
+  ChevronUp,
   AlertTriangle,
   CheckCircle,
   ExternalLink,
@@ -857,8 +857,7 @@ export default function SoftwareCatalogPage() {
   };
 
   return (
-    <div className="h-full overflow-y-auto">
-      <div className="p-[24px]">
+    <div className="ocs-app-page-outer h-full min-h-0 overflow-y-auto">
         <Breadcrumbs
           items={[
             { label: "Ecosystem", path: "/ecosystem" },
@@ -908,9 +907,9 @@ export default function SoftwareCatalogPage() {
                   <span className="text-[#4d4d4d] dark:text-[#b0b0b0]">ⓘ</span>
                 </div>
                 {expandedCategories.includes("Type") ? (
-                  <ChevronDown className="size-[14px]" />
+                  <ChevronUp className="size-[14px]" />
                 ) : (
-                  <ChevronRight className="size-[14px]" />
+                  <ChevronDown className="size-[14px]" />
                 )}
               </button>
               {expandedCategories.includes("Type") && (
@@ -999,9 +998,9 @@ export default function SoftwareCatalogPage() {
               >
                 <span>Catalog</span>
                 {expandedCategories.includes("Catalog") ? (
-                  <ChevronDown className="size-[14px]" />
+                  <ChevronUp className="size-[14px]" />
                 ) : (
-                  <ChevronRight className="size-[14px]" />
+                  <ChevronDown className="size-[14px]" />
                 )}
               </button>
               {expandedCategories.includes("Catalog") && (
@@ -1036,9 +1035,9 @@ export default function SoftwareCatalogPage() {
               >
                 <span>Capabilities</span>
                 {expandedCategories.includes("Capabilities") ? (
-                  <ChevronDown className="size-[14px]" />
+                  <ChevronUp className="size-[14px]" />
                 ) : (
-                  <ChevronRight className="size-[14px]" />
+                  <ChevronDown className="size-[14px]" />
                 )}
               </button>
             </div>
@@ -1051,9 +1050,9 @@ export default function SoftwareCatalogPage() {
               >
                 <span>Source</span>
                 {expandedCategories.includes("Source") ? (
-                  <ChevronDown className="size-[14px]" />
+                  <ChevronUp className="size-[14px]" />
                 ) : (
-                  <ChevronRight className="size-[14px]" />
+                  <ChevronDown className="size-[14px]" />
                 )}
               </button>
               {expandedCategories.includes("Source") && (
@@ -1097,9 +1096,9 @@ export default function SoftwareCatalogPage() {
               >
                 <span>Provider</span>
                 {expandedCategories.includes("Provider") ? (
-                  <ChevronDown className="size-[14px]" />
+                  <ChevronUp className="size-[14px]" />
                 ) : (
-                  <ChevronRight className="size-[14px]" />
+                  <ChevronDown className="size-[14px]" />
                 )}
               </button>
               {expandedCategories.includes("Provider") && (
@@ -1144,9 +1143,9 @@ export default function SoftwareCatalogPage() {
               >
                 <span>Valid subscription</span>
                 {expandedCategories.includes("Valid subscription") ? (
-                  <ChevronDown className="size-[14px]" />
+                  <ChevronUp className="size-[14px]" />
                 ) : (
-                  <ChevronRight className="size-[14px]" />
+                  <ChevronDown className="size-[14px]" />
                 )}
               </button>
               {expandedCategories.includes("Valid subscription") && (
@@ -1259,7 +1258,6 @@ export default function SoftwareCatalogPage() {
           </div>
         </div>
         </Breadcrumbs>
-      </div>
 
       {/* Side Panel — OCP console–style operator / catalog drawer */}
       {showSidePanel && selectedCatalogItem && (

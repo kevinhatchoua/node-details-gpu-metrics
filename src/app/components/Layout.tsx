@@ -251,7 +251,11 @@ function UserMenu({
         >
           <Flex alignItems={{ default: "alignItemsCenter" }} gap={{ default: "gapXs" }}>
             <Content component="span">{displayName}</Content>
-            <RhMicronsCaretDownIcon aria-hidden />
+            <span
+              className={isOpen ? "inline-flex [transition:transform_0.2s_ease] -rotate-180" : "inline-flex [transition:transform_0.2s_ease]"}
+            >
+              <RhMicronsCaretDownIcon aria-hidden />
+            </span>
           </Flex>
         </MenuToggle>
       )}

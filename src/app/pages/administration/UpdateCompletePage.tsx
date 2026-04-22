@@ -12,7 +12,7 @@ export default function UpdateCompletePage() {
   }, []);
 
   return (
-    <div className="p-[24px] pb-[48px]">
+    <div className="ocs-app-page-outer ocs-app-page-outer--end-3xl">
       {/* Success Banner */}
       <div className="flex flex-col items-center justify-center py-[48px] mb-[32px]">
         <div className="size-[72px] rounded-full bg-[rgba(62,134,53,0.1)] flex items-center justify-center mb-[20px]">

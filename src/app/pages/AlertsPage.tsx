@@ -19,7 +19,7 @@ export default function AlertsPage() {
   ];
 
   return (
-    <div className="p-[24px]">
+    <div className="ocs-app-page-outer">
       <div className="mb-[24px]">
         <Link to="/" className="font-['Red_Hat_Text_VF:Regular',sans-serif] font-normal text-[#06c] text-[14px] no-underline hover:opacity-70 transition-opacity">
           ← Back to Home

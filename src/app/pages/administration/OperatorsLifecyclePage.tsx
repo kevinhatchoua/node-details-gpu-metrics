@@ -101,8 +101,7 @@ export default function OperatorsLifecyclePage() {
   };
 
   return (
-    <div className="h-full overflow-y-auto">
-      <div className="p-[24px]">
+    <div className="ocs-app-page-outer h-full min-h-0 overflow-y-auto">
         <Breadcrumbs
           items={[
             { label: "Home", path: "/" },
@@ -420,7 +419,6 @@ export default function OperatorsLifecyclePage() {
           </div>
         </div>
       </Breadcrumbs>
-      </div>
     </div>
   );
 }

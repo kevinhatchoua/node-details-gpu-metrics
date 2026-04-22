@@ -113,8 +113,7 @@ To use the guided installer to provision an environment, open the Installer link
   ];
 
   return (
-    <div className="h-full overflow-y-auto">
-      <div className="p-[24px]">
+    <div className="ocs-app-page-outer h-full min-h-0 overflow-y-auto">
         <Breadcrumbs
           items={[
             { label: "Ecosystem", path: "/ecosystem" },
@@ -550,8 +549,7 @@ spec:
             <p className="text-[14px] text-[#6a6e73] dark:text-[#a0a0a0]">No KubApp resources found for this operator.</p>
           </div>
         )}
-      </Breadcrumbs>
-      </div>
+        </Breadcrumbs>
     </div>
   );
 }

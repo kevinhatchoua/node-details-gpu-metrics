@@ -31,6 +31,10 @@
   --app-page-canvas-no-glass: var(--pf-color-gray-10);
   --app-masthead-bg: var(--pf-color-white);
   --app-masthead-border: var(--pf-color-gray-30);
+  /* Console-like insets: sides + top + bottom (wider than 1rem so content clears shell edges) */
+  --ocs-app-page-pad-x: var(--pf-t--global--spacer--2xl, 2rem);
+  --ocs-app-page-pad-t: var(--pf-t--global--spacer--xl, 1.5rem);
+  --ocs-app-page-pad-b: var(--pf-t--global--spacer--lg, 1rem);
 }
 
 .dark {
@@ -38,6 +42,9 @@
   --app-page-canvas-no-glass: #0f0f0f;
   --app-masthead-bg: var(--pf-color-gray-90);
   --app-masthead-border: var(--pf-color-gray-70);
+  --ocs-app-page-pad-x: var(--pf-t--global--spacer--2xl, 2rem);
+  --ocs-app-page-pad-t: var(--pf-t--global--spacer--xl, 1.5rem);
+  --ocs-app-page-pad-b: var(--pf-t--global--spacer--lg, 1rem);
 }
 
 /**
@@ -495,18 +502,10 @@ html.no-glass.dark .app-glass-panel.app-glass-panel--edge-right {
 html.dark .ocs-console-page.pf-v6-c-page {
   --pf-v6-c-masthead--BackgroundColor: var(--pf-color-gray-95);
   --pf-v6-c-masthead--BorderColor: var(--pf-color-gray-80);
-  /* Flat shell: nav + main on page canvas (no solid column or glass “card” behind content) */
-  --pf-v6-c-page__sidebar--BackgroundColor: transparent;
-  --pf-v6-c-page__sidebar--xl--BackgroundColor: transparent;
+  --pf-v6-c-page__sidebar--BackgroundColor: var(--pf-color-gray-95);
+  --pf-v6-c-page__sidebar--xl--BackgroundColor: var(--pf-color-gray-95);
   --pf-v6-c-page__sidebar--BackdropFilter: none;
   --pf-v6-c-page__sidebar--xl--BackdropFilter: none;
-  --pf-v6-c-page__main-container--BackgroundColor: transparent;
-  --pf-v6-c-page__main-container--BackdropFilter: none;
-  --pf-v6-c-page__main-container--BoxShadow: none;
-  --pf-v6-c-page__main-container--BorderBlockStartWidth: 0;
-  --pf-v6-c-page__main-container--BorderBlockEndWidth: 0;
-  --pf-v6-c-page__main-container--BorderInlineStartWidth: 0;
-  --pf-v6-c-page__main-container--BorderInlineEndWidth: 0;
 }
 
 html.dark .ocs-console-masthead.pf-v6-c-masthead {
@@ -531,18 +530,13 @@ html.dark .ocs-console-masthead .pf-v6-c-button.pf-m-plain:hover {
 html:not(.dark) .ocs-console-page.pf-v6-c-page {
   --pf-v6-c-masthead--BackgroundColor: var(--pf-t--global--background--color--secondary--default);
   --pf-v6-c-masthead--BorderColor: var(--pf-t--global--border--color--default);
-  /* Flat shell: same as dark — nav + main on the grey page canvas */
-  --pf-v6-c-page__sidebar--BackgroundColor: transparent;
-  --pf-v6-c-page__sidebar--xl--BackgroundColor: transparent;
-  --pf-v6-c-page__sidebar--BackdropFilter: none;
-  --pf-v6-c-page__sidebar--xl--BackdropFilter: none;
-  --pf-v6-c-page__main-container--BackgroundColor: transparent;
-  --pf-v6-c-page__main-container--BackdropFilter: none;
-  --pf-v6-c-page__main-container--BoxShadow: none;
-  --pf-v6-c-page__main-container--BorderBlockStartWidth: 0;
-  --pf-v6-c-page__main-container--BorderBlockEndWidth: 0;
-  --pf-v6-c-page__main-container--BorderInlineStartWidth: 0;
-  --pf-v6-c-page__main-container--BorderInlineEndWidth: 0;
+  --pf-v6-c-page__sidebar--BackgroundColor: var(
+    --pf-t--global--background--color--floating--secondary--default
+  );
+  --pf-v6-c-page__sidebar--xl--BackgroundColor: var(
+    --pf-t--global--background--color--glass--primary--default,
+    var(--pf-t--global--background--color--secondary--default)
+  );
 }
 
 html:not(.dark) .ocs-console-masthead .pf-v6-c-masthead__main,
@@ -735,6 +729,25 @@ html:not(.dark) .ocs-console-sidebar .pf-v6-c-nav {
   letter-spacing: normal;
 }
 
+/**
+ * Expand/collapse carets: PatternFly uses RhMicronsCaretDown + 180° when open. If another layer
+ * shortens the rotation, the “open” state can read as left (⟨) instead of up (^). Force the
+ * full 180° with a stable origin so open always reads as up, closed as down.
+ */
+.ocs-console-page
+  .pf-v6-c-nav__link[aria-expanded="true"]
+  .pf-v6-c-nav__toggle-icon,
+.ocs-console-page .pf-v6-c-card.pf-m-expanded .pf-v6-c-card__header-toggle-icon,
+.ocs-console-page
+  .pf-v6-c-accordion__item.pf-m-expanded
+  .pf-v6-c-accordion__toggle-icon,
+.ocs-console-page
+  .pf-v6-c-expandable-section.pf-m-expanded
+  .pf-v6-c-expandable-section__toggle-icon {
+  transform: rotate(180deg) !important;
+  transform-origin: 50% 50%;
+}
+
 /* Installed Operators — @patternfly/react-data-view (HPUX-1429) */
 .ocs-io-dataview [data-ouia-component-id="installed-operators-dv-toolbar"] {
   width: 100%;
@@ -754,4 +767,80 @@ html:not(.dark) .ocs-console-sidebar .pf-v6-c-nav {
 .ocs-operator-table-sort-icon--active {
   opacity: 1;
   color: var(--pf-t--global--text--color--link--default, #06c);
+}
+
+/**
+ * All pages: main column aligns with nav; single chrome inset (no top stack); glass gap unchanged.
+ */
+html .ocs-console-page.pf-v6-c-page {
+  --pf-v6-c-page__main-section--PaddingBlockStart: 0;
+  --pf-v6-c-page__main-section--PaddingBlockEnd: 0;
+}
+
+/** Home / stub PageSection, or any full-width app section without Breadcrumbs. */
+.ocs-app-page-chrome.pf-v6-c-page__main-section {
+  padding-block-start: var(--ocs-app-page-pad-t);
+  padding-inline: var(--ocs-app-page-pad-x);
+  padding-block-end: var(--ocs-app-page-pad-b);
+}
+
+/**
+ * Breadcrumb+body pages: outer wrapper insets the strip + main; inner PF main-section
+ * and breadcrumb padding is disabled so insets are not doubled. Matches Overview padding.
+ */
+.ocs-app-page-outer {
+  box-sizing: border-box;
+  min-height: 0;
+  width: 100%;
+  padding-block-start: var(--ocs-app-page-pad-t);
+  padding-inline: var(--ocs-app-page-pad-x);
+  padding-block-end: var(--ocs-app-page-pad-b);
+}
+
+.ocs-app-page-outer--end-3xl {
+  padding-block-end: 3rem;
+}
+
+.ocs-app-page-outer--pb-0 {
+  padding-block-end: 0;
+}
+
+.ocs-app-page-outer .pf-v6-c-page__main-section,
+.ocs-app-page-outer.pf-v6-c-page__main-section {
+  --pf-v6-c-page__main-section--PaddingBlockStart: 0;
+  --pf-v6-c-page__main-section--PaddingBlockEnd: 0;
+  --pf-v6-c-page__main-section--PaddingInlineStart: 0;
+  --pf-v6-c-page__main-section--PaddingInlineEnd: 0;
+  padding: 0;
+}
+
+.ocs-app-page-outer .pf-v6-c-page__main-breadcrumb {
+  --pf-v6-c-page__main-breadcrumb--PaddingBlockStart: 0;
+  --pf-v6-c-page__main-breadcrumb--PaddingBlockEnd: 0;
+  --pf-v6-c-page__main-breadcrumb--PaddingInlineStart: 0;
+  --pf-v6-c-page__main-breadcrumb--PaddingInlineEnd: 0;
+  padding: 0;
+  margin: 0;
+  margin-bottom: var(--pf-t--global--spacer--md);
+}
+
+.ols-legal-header-notice {
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--pf-t--global--border--color--default);
+  padding: var(--pf-t--global--spacer--sm) var(--pf-t--global--spacer--md);
+  background-color: var(
+    --pf-t--global--background--color--secondary--default,
+    rgba(0, 0, 0, 0.03)
+  );
+}
+
+html.dark .ols-legal-header-notice {
+  border-bottom-color: var(--pf-t--global--border--color--default);
+  background-color: rgba(255, 255, 255, 0.04);
+}
+
+.ols-legal-header-notice .pf-v6-c-content,
+.ols-legal-header-notice p {
+  color: var(--pf-t--global--text--color--subtle) !important;
+  line-height: 1.45;
 }

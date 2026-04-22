@@ -31,6 +31,7 @@ import {
   Title,
 } from "@patternfly/react-core";
 import AngleDownIcon from "@patternfly/react-icons/dist/esm/icons/angle-down-icon";
+import AngleUpIcon from "@patternfly/react-icons/dist/esm/icons/angle-up-icon";
 import BellIcon from "@patternfly/react-icons/dist/esm/icons/bell-icon";
 import ChartLineIcon from "@patternfly/react-icons/dist/esm/icons/chart-line-icon";
 import CheckCircleIcon from "@patternfly/react-icons/dist/esm/icons/check-circle-icon";
@@ -89,7 +90,7 @@ function UtilizationToolbarDropdown({ label, menuId }: { label: string; menuId: 
           variant="secondary"
           onClick={() => setIsOpen((o) => !o)}
           isExpanded={isOpen}
-          icon={<AngleDownIcon />}
+          icon={isOpen ? <AngleUpIcon /> : <AngleDownIcon />}
         >
           {label}
         </MenuToggle>
@@ -472,7 +473,7 @@ export default function HomePage() {
   const isGlass = usePatternFlyGlassActive();
 
   return (
-    <PageSection padding={{ default: "padding" }}>
+    <PageSection padding={{ default: "noPadding" }} className="ocs-app-page-chrome">
       <Grid hasGutter>
         <GridItem span={12} lg={3}>
           <Flex direction={{ default: "column" }} gap={{ default: "gapLg" }}>

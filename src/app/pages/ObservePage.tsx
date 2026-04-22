@@ -59,8 +59,7 @@ export default function ObservePage() {
   ];
 
   return (
-    <div className="h-full overflow-y-auto">
-      <div className="p-[24px]">
+    <div className="ocs-app-page-outer h-full min-h-0 overflow-y-auto">
         <div className="flex items-center justify-between mb-[24px]">
           <div>
             <h1 className="font-['Red_Hat_Display_VF:Medium',sans-serif] font-medium leading-[36.4px] text-[#151515] dark:text-white text-[28px] mb-[8px]">
@@ -315,7 +314,6 @@ export default function ObservePage() {
             </div>
           </div>
         </div>
-      </div>
 
     </div>
   );

@@ -1,6 +1,6 @@
 export default function FavoritesPage() {
   return (
-    <div className="p-[24px]">
+    <div className="ocs-app-page-outer">
       <h1 className="font-['Red_Hat_Display_VF:Medium',sans-serif] font-medium leading-[36.4px] text-[#151515] dark:text-white text-[28px] mb-[24px]">
         Favorites
       </h1>

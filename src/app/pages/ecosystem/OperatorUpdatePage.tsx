@@ -77,8 +77,7 @@ export default function OperatorUpdatePage() {
   };
 
   return (
-    <div className="h-full overflow-y-auto">
-      <div className="p-[24px]">
+    <div className="ocs-app-page-outer h-full min-h-0 overflow-y-auto">
         <Breadcrumbs
           items={fromClusterUpdate ? [
             { label: "Administration", path: "/administration/cluster-settings" },
@@ -421,7 +420,6 @@ export default function OperatorUpdatePage() {
           </Link>
         </div>
         </Breadcrumbs>
-      </div>
     </div>
   );
 }

@@ -15,7 +15,7 @@ export default function AgentModePage() {
   ];
 
   return (
-    <div className="p-[24px] pb-[48px]">
+    <div className="ocs-app-page-outer ocs-app-page-outer--end-3xl">
       <Link to="/administration/cluster-settings" className="flex items-center gap-[6px] text-[#0066cc] dark:text-[#4dabf7] text-[14px] no-underline hover:underline mb-[16px] font-['Red_Hat_Text:Regular',sans-serif]">
         <ArrowLeft className="size-[16px]" /> Back to Cluster Settings
       </Link>
@@ -31,7 +31,7 @@ export default function AgentModePage() {
       <div className="rounded-[16px] p-[2px] bg-gradient-to-r from-[#6753ac] via-[#0066cc] to-[#009596] mb-[24px]">
         <div className="bg-white dark:bg-[#1a1a1a] rounded-[14px] overflow-hidden">
           <div className="h-[4px] bg-gradient-to-r from-[#6753ac] via-[#0066cc] to-[#009596]" />
-          <div className="p-[24px]">
+          <div className="p-6">
             <div className="flex items-center gap-[10px] mb-[12px]">
               <div className="size-[10px] rounded-full bg-[#3e8635] animate-pulse" />
               <span className="font-['Red_Hat_Display:SemiBold',sans-serif] font-semibold text-[#151515] dark:text-white text-[16px]">Update Agent Active</span>

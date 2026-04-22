@@ -34,7 +34,7 @@ export default function PreflightChecksPage() {
   }, [running, completedIndex, allDone]);
 
   return (
-    <div className="p-[24px] pb-[48px]">
+    <div className="ocs-app-page-outer ocs-app-page-outer--end-3xl">
       <Link to={`/administration/cluster-update/version/${version}`} className="flex items-center gap-[6px] text-[#0066cc] dark:text-[#4dabf7] text-[14px] no-underline hover:underline mb-[16px] font-['Red_Hat_Text:Regular',sans-serif]">
         <ArrowLeft className="size-[16px]" /> Back to version detail
       </Link>

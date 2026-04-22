@@ -36,6 +36,7 @@ import {
   TextInput,
   Title,
 } from "@patternfly/react-core";
+import { LightspeedHeaderNotice, LightspeedAiMessageFooter } from "./lightspeed/LightspeedLegalCopy";
 
 type ChatAction = {
   label: string;
@@ -272,6 +273,9 @@ export function OlsChatbot({
             </DrawerHead>
             <DrawerPanelBody hasNoPadding>
               <Flex direction={{ default: "column" }} style={{ height: "100%", minHeight: 0 }}>
+                <div style={{ flexShrink: 0, paddingInline: "var(--pf-t--global--spacer--md)", paddingBlockStart: "var(--pf-t--global--spacer--sm)" }}>
+                  <LightspeedHeaderNotice />
+                </div>
                 <FlexItem grow={{ default: "grow" }} style={{ minHeight: 0, overflow: "auto" }}>
                   <div role="log" aria-live="polite" style={{ padding: "var(--pf-t--global--spacer--md)" }}>
                     {messages.map((msg, i) => (
@@ -321,6 +325,7 @@ export function OlsChatbot({
                                 )
                               )}
                             </Content>
+                            <LightspeedAiMessageFooter />
                             {msg.actions && msg.actions.length > 0 ? (
                               <Flex gap={{ default: "gapSm" }} flexWrap={{ default: "flexWrapWrap" }}>
                                 {msg.actions.map((action, k) => (

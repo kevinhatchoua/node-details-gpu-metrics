@@ -119,7 +119,7 @@ export default function StoragePage() {
   };
 
   return (
-    <div className="p-[24px]">
+    <div className="ocs-app-page-outer">
       <Breadcrumbs
         items={[
           { label: "Home", path: "/" },

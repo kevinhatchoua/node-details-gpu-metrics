@@ -92,7 +92,7 @@ export default function PodsPage() {
   };
 
   return (
-    <div className="p-[24px] w-full">
+    <div className="ocs-app-page-outer w-full">
       <Breadcrumbs
         items={[
           { label: "Home", path: "/" },
