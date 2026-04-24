@@ -50,12 +50,17 @@ export function applyThemeToDocument(prefs: ThemePreferences): void {
   } else {
     root.classList.remove("dark", PF_THEME_DARK_CLASS);
   }
+  /**
+   * Keep PatternFly `pf-v6-theme-glass` on the document so the brand canvas (diagonal light
+   * treatment behind the shell) always matches the OpenShift 5+ glass console. Toggling the user
+   * preference only adds `no-glass`, which flattens *our* `.app-glass-panel` surfaces in theme.css
+   * — it must not strip PF glass, or the nav/main lose the background and look like a solid slab.
+   */
+  root.classList.add(PF_THEME_GLASS_CLASS);
   if (prefs.glass) {
     root.classList.remove("no-glass");
-    root.classList.add(PF_THEME_GLASS_CLASS);
   } else {
     root.classList.add("no-glass");
-    root.classList.remove(PF_THEME_GLASS_CLASS);
   }
 }
 
