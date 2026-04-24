@@ -34,5 +34,9 @@ export default defineConfig({
   optimizeDeps: {
     include: ['react', 'react/jsx-runtime', 'react-dom', 'react-dom/client'],
   },
+  build: {
+    // PatternFly + app routes in one graph often exceed 500 kB; gzip ~516 kB is acceptable for this prototype.
+    chunkSizeWarningLimit: 2200,
+  },
   assetsInclude: ['**/*.svg', '**/*.csv'],
 })
