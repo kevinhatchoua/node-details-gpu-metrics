@@ -75,10 +75,10 @@ function installedOperatorsPrecheckDetail(version: string, channel: string): str
     `• **Conditions pending** — Sample observability bundle (discovery still settling)\n\n` +
     `**Checks performed**\n` +
     `• Subscription / extension status vs. target version\n` +
-    `• Support and end-of-life signals (as shown in the table)\n` +
+    `• Support phase and lifecycle dates (full support, maintenance, EOL — as shown in the table)\n` +
     `• Alignment with **Cluster Update** readiness for the same target\n\n` +
     `**Next steps**\n` +
-    `1. Approve updates for operators that block your cluster plan (row actions, or select **two or more** then **Approve update**).\n` +
+    `1. Approve updates for operators that block your cluster plan (row **Update** / operator update flow).\n` +
     `2. Resolve **Incompatible** operators before go-live.\n` +
     `3. Open **Cluster Update** when catalog and platform both look clear.\n\n` +
     `Ask about upgrade order, risk, or a specific operator in the list.`

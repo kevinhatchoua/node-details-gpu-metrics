@@ -1,5 +1,8 @@
 import { useState } from "react";
 import { useParams, Link, useNavigate, useLocation } from "react-router";
+import { PageSection } from "@patternfly/react-core";
+import { DataView } from "@patternfly/react-data-view";
+import { InnerScrollContainer, Table, Tbody, Td, Th, Thead, Tr } from "@patternfly/react-table";
 import { Info, ExternalLink, AlertTriangle, CheckCircle } from "@/lib/pfIcons";
 import Breadcrumbs from "../../components/Breadcrumbs";
 
@@ -279,75 +282,67 @@ export default function OperatorUpdatePage() {
               </div>
             </div>
 
-            {/* Related Operators */}
+            {/* Related Operators — PatternFly Data View + table (https://www.patternfly.org/extensions/data-view/overview) */}
             <div className="bg-[rgba(255,255,255,0.5)] dark:bg-[rgba(255,255,255,0.05)] border border-[rgba(0,0,0,0.1)] dark:border-[rgba(255,255,255,0.1)] rounded-[16px] p-[24px]">
               <h3 className="font-['Red_Hat_Display:SemiBold',sans-serif] font-semibold text-[18px] text-[#151515] dark:text-white mb-[16px]">
                 Related Operators
               </h3>
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-[rgba(0,0,0,0.1)] dark:border-[rgba(255,255,255,0.1)]">
-                    <th className="text-left py-[12px] text-[13px] font-semibold text-[#151515] dark:text-white">
-                      Name ↕
-                    </th>
-                    <th className="text-left py-[12px] text-[13px] font-semibold text-[#151515] dark:text-white">
-                      Status ↕
-                    </th>
-                    <th className="text-left py-[12px] text-[13px] font-semibold text-[#151515] dark:text-white">
-                      Version ↕
-                    </th>
-                    <th className="text-left py-[12px] text-[13px] font-semibold text-[#151515] dark:text-white">
-                      Header ↕
-                    </th>
-                    <th className="text-left py-[12px] text-[13px] font-semibold text-[#151515] dark:text-white">
-                      Header ↕
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {operator.relatedOperators.map((relatedOp, index) => (
-                    <tr
-                      key={index}
-                      className={`border-b border-[rgba(0,0,0,0.05)] dark:border-[rgba(255,255,255,0.05)] ${
-                        index === operator.relatedOperators.length - 1 ? "border-b-0" : ""
-                      }`}
+              <DataView ouiaId="operator-update-related-operators-dv" className="ocs-io-dataview">
+                <PageSection aria-label="Related operators" padding={{ default: "noPadding" }}>
+                  <InnerScrollContainer>
+                    <Table
+                      aria-label="Related operators"
+                      borders
+                      variant="compact"
+                      className="ocs-io-operator-table"
                     >
-                      <td className="py-[12px]">
-                        <Link
-                          to="#"
-                          className="text-[14px] text-[#0066cc] dark:text-[#4dabf7] hover:underline"
-                        >
-                          {relatedOp.name}
-                        </Link>
-                      </td>
-                      <td className="py-[12px]">
-                        {relatedOp.status === "Installed" && (
-                          <span className="flex items-center gap-[6px] text-[13px] text-[#3e8635] dark:text-[#5ba352]">
-                            <CheckCircle className="size-[14px]" />
-                            {relatedOp.status}
-                          </span>
-                        )}
-                        {relatedOp.status === "Pending update" && (
-                          <span className="flex items-center gap-[6px] text-[13px] text-[#f0ab00] dark:text-[#f4c145]">
-                            <AlertTriangle className="size-[14px]" />
-                            {relatedOp.status}
-                          </span>
-                        )}
-                        {relatedOp.status === "Not Installed" && (
-                          <span className="text-[13px] text-[#4d4d4d] dark:text-[#b0b0b0]">
-                            {relatedOp.status}
-                          </span>
-                        )}
-                      </td>
-                      <td className="py-[12px] text-[14px] text-[#151515] dark:text-white">
-                        {relatedOp.version}
-                      </td>
-                      <td className="py-[12px]"></td>
-                      <td className="py-[12px]"></td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                      <Thead>
+                        <Tr>
+                          <Th dataLabel="Name">Name</Th>
+                          <Th dataLabel="Status">Status</Th>
+                          <Th dataLabel="Version">Version</Th>
+                        </Tr>
+                      </Thead>
+                      <Tbody>
+                        {operator.relatedOperators.map((relatedOp, index) => (
+                          <Tr key={index}>
+                            <Td dataLabel="Name">
+                              <Link
+                                to="#"
+                                className="text-[14px] text-[#0066cc] dark:text-[#4dabf7] hover:underline"
+                              >
+                                {relatedOp.name}
+                              </Link>
+                            </Td>
+                            <Td dataLabel="Status">
+                              {relatedOp.status === "Installed" && (
+                                <span className="flex items-center gap-[6px] text-[13px] text-[#3e8635] dark:text-[#5ba352]">
+                                  <CheckCircle className="size-[14px]" />
+                                  {relatedOp.status}
+                                </span>
+                              )}
+                              {relatedOp.status === "Pending update" && (
+                                <span className="flex items-center gap-[6px] text-[13px] text-[#f0ab00] dark:text-[#f4c145]">
+                                  <AlertTriangle className="size-[14px]" />
+                                  {relatedOp.status}
+                                </span>
+                              )}
+                              {relatedOp.status === "Not Installed" && (
+                                <span className="text-[13px] text-[#4d4d4d] dark:text-[#b0b0b0]">
+                                  {relatedOp.status}
+                                </span>
+                              )}
+                            </Td>
+                            <Td dataLabel="Version">
+                              <span className="text-[14px] text-[#151515] dark:text-white">{relatedOp.version}</span>
+                            </Td>
+                          </Tr>
+                        ))}
+                      </Tbody>
+                    </Table>
+                  </InnerScrollContainer>
+                </PageSection>
+              </DataView>
             </div>
           </div>
 

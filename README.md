@@ -100,8 +100,8 @@ Contextual AI drawer invoked from multiple entry points (AI Assessment **Pre-che
 
 Catalog operators installed on the cluster, aligned with the **Cluster Update** operator table for column names and styling:
 
-- Operator (name + namespace), Version, Cluster compatibility, Update plan, Support, Status, Last updated, Managed namespaces, row actions (kebab), and bulk selection for **Approve update** (with modal and table refresh).
-- **Manage columns** — show or hide data columns; selection and Operator/Actions remain visible.
+- Operator (name + namespace), Version, Cluster compatibility, Update plan, Support phase, Status, Last updated, Managed namespaces, and optional row actions (kebab).
+- **Manage columns** — show or hide data columns; Operator is always shown.
 - Legend strip: **Cluster extension (OLM v1 managed)**.
 - **AI Assessment** variant for this page with Installed Operators-specific copy and pre-check context.
 

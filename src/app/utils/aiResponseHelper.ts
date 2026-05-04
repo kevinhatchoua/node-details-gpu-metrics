@@ -1,5 +1,7 @@
 // AI Response Helper - Context-aware natural language processing for OpenShift LightSpeed
 
+import { getDerivedSupportPhase } from "@/lib/operatorSupportLifecycle";
+
 interface AIResponse {
   content: string;
   suggestions?: string[];
@@ -290,8 +292,9 @@ function getInstalledOperatorsResponse(
   
   // Compatibility check
   if (intent.primaryIntent === 'operator_compatibility' || /compatible|compatibility/.test(lowerInput)) {
-    const incompatible = operators.filter(op => 
-      op.clusterCompatibility === 'Incompatible' || op.supportBadge === 'End of life'
+    const incompatible = operators.filter(
+      (op) =>
+        op.clusterCompatibility === "Incompatible" || getDerivedSupportPhase(op) === "End of life"
     );
     
     return {

@@ -1,5 +1,8 @@
 import { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router";
+import { PageSection } from "@patternfly/react-core";
+import { DataView } from "@patternfly/react-data-view";
+import { InnerScrollContainer, Table, Tbody, Td, Th, Thead, Tr } from "@patternfly/react-table";
 import Breadcrumbs from "../../components/Breadcrumbs";
 
 export default function OperatorInstallingPage() {
@@ -150,64 +153,54 @@ export default function OperatorInstallingPage() {
             </div>
           </div>
 
-          {/* Status Overview */}
+          {/* Status overview — PatternFly Data View + table */}
           <div className="bg-[rgba(255,255,255,0.5)] dark:bg-[rgba(255,255,255,0.05)] border border-[rgba(0,0,0,0.1)] dark:border-[rgba(255,255,255,0.1)] rounded-[16px] p-[24px]">
             <h3 className="font-['Red_Hat_Display:SemiBold',sans-serif] font-semibold text-[18px] text-[#151515] dark:text-white mb-[16px]">
               Status overview
             </h3>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-[rgba(0,0,0,0.1)] dark:border-[rgba(255,255,255,0.1)]">
-                    <th className="text-left py-[12px] text-[13px] font-semibold text-[#151515] dark:text-white">
-                      Name
-                    </th>
-                    <th className="text-left py-[12px] text-[13px] font-semibold text-[#151515] dark:text-white">
-                      Kind
-                    </th>
-                    <th className="text-left py-[12px] text-[13px] font-semibold text-[#151515] dark:text-white">
-                      Status
-                    </th>
-                    <th className="text-left py-[12px] text-[13px] font-semibold text-[#151515] dark:text-white">
-                      API version
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {resources.map((resource, index) => (
-                    <tr
-                      key={index}
-                      className={`border-b border-[rgba(0,0,0,0.05)] dark:border-[rgba(255,255,255,0.05)] ${
-                        index === resources.length - 1 ? "border-b-0" : ""
-                      }`}
-                    >
-                      <td className="py-[12px]">
-                        <div className="flex items-center gap-[8px]">
-                          <span className="px-[8px] py-[2px] bg-[#0066cc] dark:bg-[#4dabf7] text-white rounded-[4px] text-[11px] font-semibold">
-                            PR
-                          </span>
-                          <Link
-                            to="#"
-                            className="text-[14px] text-[#0066cc] dark:text-[#4dabf7] hover:underline"
-                          >
-                            {resource.name}
-                          </Link>
-                        </div>
-                      </td>
-                      <td className="py-[12px] text-[14px] text-[#151515] dark:text-white">
-                        {resource.kind}
-                      </td>
-                      <td className="py-[12px] text-[14px] text-[#4d4d4d] dark:text-[#b0b0b0]">
-                        {resource.status}
-                      </td>
-                      <td className="py-[12px] text-[14px] text-[#4d4d4d] dark:text-[#b0b0b0]">
-                        {resource.apiVersion}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <DataView ouiaId="operator-installing-status-dv" className="ocs-io-dataview">
+              <PageSection aria-label="Installation resources" padding={{ default: "noPadding" }}>
+                <InnerScrollContainer>
+                  <Table
+                    aria-label="Installation resources"
+                    borders
+                    variant="compact"
+                    className="ocs-io-operator-table"
+                  >
+                    <Thead>
+                      <Tr>
+                        <Th dataLabel="Name">Name</Th>
+                        <Th dataLabel="Kind">Kind</Th>
+                        <Th dataLabel="Status">Status</Th>
+                        <Th dataLabel="API version">API version</Th>
+                      </Tr>
+                    </Thead>
+                    <Tbody>
+                      {resources.map((resource, index) => (
+                        <Tr key={index}>
+                          <Td dataLabel="Name">
+                            <div className="flex items-center gap-[8px]">
+                              <span className="px-[8px] py-[2px] bg-[#0066cc] dark:bg-[#4dabf7] text-white rounded-[4px] text-[11px] font-semibold">
+                                PR
+                              </span>
+                              <Link
+                                to="#"
+                                className="text-[14px] text-[#0066cc] dark:text-[#4dabf7] hover:underline"
+                              >
+                                {resource.name}
+                              </Link>
+                            </div>
+                          </Td>
+                          <Td dataLabel="Kind">{resource.kind}</Td>
+                          <Td dataLabel="Status">{resource.status}</Td>
+                          <Td dataLabel="API version">{resource.apiVersion}</Td>
+                        </Tr>
+                      ))}
+                    </Tbody>
+                  </Table>
+                </InnerScrollContainer>
+              </PageSection>
+            </DataView>
           </div>
         </div>
         </Breadcrumbs>
