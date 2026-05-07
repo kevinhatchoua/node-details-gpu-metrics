@@ -171,17 +171,23 @@ const ioManageColRowStyle = (withDivider: boolean): CSSProperties => ({
 type IoListFilters = {
   name: string;
   status: string[];
-  updatePlan: string[];
+  version: string;
   clusterCompatibility: string[];
   support: string[];
+  supportPhaseEnd: string;
+  lastUpdated: string;
+  managedNamespaces: string;
 };
 
 const INITIAL_IO_FILTERS: IoListFilters = {
   name: "",
   status: [],
-  updatePlan: [],
+  version: "",
   clusterCompatibility: [],
   support: [],
+  supportPhaseEnd: "",
+  lastUpdated: "",
+  managedNamespaces: "",
 };
 
 function getEmptyIoListFilters(): IoListFilters {
@@ -189,17 +195,13 @@ function getEmptyIoListFilters(): IoListFilters {
 }
 
 const FILTER_VALUE_OPTIONS: Record<
-  keyof Pick<IoListFilters, "status" | "updatePlan" | "clusterCompatibility" | "support">,
+  keyof Pick<IoListFilters, "status" | "clusterCompatibility" | "support">,
   { value: string; label: string }[]
 > = {
   status: [
     { value: "Running", label: "Running" },
     { value: "Degraded", label: "Degraded" },
     { value: "Pending", label: "Pending" },
-  ],
-  updatePlan: [
-    { value: "Automatic", label: "Automatic" },
-    { value: "Manual", label: "Manual" },
   ],
   clusterCompatibility: [
     { value: "Compatible", label: "Compatible" },
@@ -216,7 +218,7 @@ const FILTER_VALUE_OPTIONS: Record<
   ],
 };
 
-/** HPUX-1429 / CONSOLE-5091 list advanced filter — same attributes as the DataView toolbar. */
+/** HPUX-1429 / CONSOLE-5091 — advanced filter attributes (toolbar attribute menu uses the same set per tab). */
 const IO_LIST_ADV_FILTER_SPEC: ListAdvancedAttributeSpec<keyof IoListFilters>[] = [
   {
     id: "name",
@@ -232,11 +234,10 @@ const IO_LIST_ADV_FILTER_SPEC: ListAdvancedAttributeSpec<keyof IoListFilters>[] 
     options: FILTER_VALUE_OPTIONS.status,
   },
   {
-    id: "updatePlan",
-    label: "Update plan",
-    valueKind: "multi",
-    valuePlaceholder: "Filter by update plan",
-    options: FILTER_VALUE_OPTIONS.updatePlan,
+    id: "version",
+    label: "Version",
+    valueKind: "text",
+    valuePlaceholder: "Filter by version",
   },
   {
     id: "clusterCompatibility",
@@ -251,6 +252,24 @@ const IO_LIST_ADV_FILTER_SPEC: ListAdvancedAttributeSpec<keyof IoListFilters>[] 
     valueKind: "multi",
     valuePlaceholder: "Filter by support phase",
     options: FILTER_VALUE_OPTIONS.support,
+  },
+  {
+    id: "supportPhaseEnd",
+    label: "Support phase end date",
+    valueKind: "text",
+    valuePlaceholder: "Filter by support phase end date",
+  },
+  {
+    id: "lastUpdated",
+    label: "Last updated",
+    valueKind: "text",
+    valuePlaceholder: "Filter by last updated",
+  },
+  {
+    id: "managedNamespaces",
+    label: "Managed namespaces",
+    valueKind: "text",
+    valuePlaceholder: "Filter by managed namespace",
   },
 ];
 
@@ -365,10 +384,9 @@ function rowMatchesDataViewFilters(op: OperatorRow, f: IoListFilters): boolean {
     if (!op.name.toLowerCase().includes(q) && !op.namespace.toLowerCase().includes(q)) return false;
   }
   if (f.status.length > 0 && !f.status.includes(op.status)) return false;
-  if (f.updatePlan.length > 0) {
-    const autoOk = f.updatePlan.includes("Automatic") && op.autoUpdate;
-    const manOk = f.updatePlan.includes("Manual") && !op.autoUpdate;
-    if (!autoOk && !manOk) return false;
+  if (f.version.trim()) {
+    const q = f.version.trim().toLowerCase();
+    if (!op.version.toLowerCase().includes(q)) return false;
   }
   if (f.clusterCompatibility.length > 0) {
     if (op.isOlmV1Extension) return false;
@@ -377,6 +395,25 @@ function rowMatchesDataViewFilters(op: OperatorRow, f: IoListFilters): boolean {
   if (f.support.length > 0) {
     if (op.isOlmV1Extension) return false;
     if (!f.support.includes(getDerivedSupportPhase(op))) return false;
+  }
+  if (f.supportPhaseEnd.trim()) {
+    if (op.isOlmV1Extension) return false;
+    const q = f.supportPhaseEnd.trim().toLowerCase();
+    const raw = getCurrentPhaseEndDateRaw(op);
+    const formatted = formatLifecycleDateShort(raw).toLowerCase();
+    const rawStr = (raw ?? "").toLowerCase();
+    if (!formatted.includes(q) && !rawStr.includes(q)) return false;
+  }
+  if (f.lastUpdated.trim()) {
+    const q = f.lastUpdated.trim().toLowerCase();
+    const display = formatDataViewListDate(op.lastUpdated).toLowerCase();
+    const rawStr = (op.lastUpdated ?? "").toLowerCase();
+    if (!display.includes(q) && !rawStr.includes(q)) return false;
+  }
+  if (f.managedNamespaces.trim()) {
+    const q = f.managedNamespaces.trim().toLowerCase();
+    const nss = op.managedNamespaces ?? [];
+    if (!nss.some((ns) => ns.toLowerCase().includes(q))) return false;
   }
   return true;
 }
@@ -1031,7 +1068,8 @@ export default function InstalledOperatorsPage() {
   const { demoVariant } = useClusterUpdateDemoVariant();
   const { setCurrentPage } = useChat();
   const isGlass = usePatternFlyGlassActive();
-  const showAssessmentAndOverviewCards = demoVariant === "manual-and-agent";
+  /** Agent-led demo (`agent-only`): AI Assessment + summary cards. Manual updates demo hides them. */
+  const showAssessmentAndOverviewCards = demoVariant === "agent-only";
 
   const openChatbot = useCallback((context: string) => {
     setChatbotContext(context);
@@ -1091,15 +1129,11 @@ export default function InstalledOperatorsPage() {
     [showOlmV0ListColumns]
   );
 
-  const ioListAdvFilterSpecEffective = useMemo(
-    () =>
-      showOlmV0ListColumns
-        ? IO_LIST_ADV_FILTER_SPEC
-        : IO_LIST_ADV_FILTER_SPEC.filter(
-            (a) => a.id !== "clusterCompatibility" && a.id !== "support"
-          ),
-    [showOlmV0ListColumns]
-  );
+  const ioListAdvFilterSpecEffective = useMemo(() => {
+    if (showOlmV0ListColumns) return IO_LIST_ADV_FILTER_SPEC;
+    const omit = new Set<string>(["clusterCompatibility", "support", "supportPhaseEnd"]);
+    return IO_LIST_ADV_FILTER_SPEC.filter((a) => !omit.has(String(a.id)));
+  }, [showOlmV0ListColumns]);
 
   const tableColSpan = 1 + visibleDataColumnCount + (visibleColumns.rowActions ? 1 : 0);
 
@@ -1143,7 +1177,7 @@ export default function InstalledOperatorsPage() {
 
   useEffect(() => {
     if (installKindTab === "olmv1") {
-      onSetFilters({ clusterCompatibility: [], support: [] });
+      onSetFilters({ clusterCompatibility: [], support: [], supportPhaseEnd: "" });
     }
   }, [installKindTab, onSetFilters]);
 
@@ -1498,10 +1532,43 @@ export default function InstalledOperatorsPage() {
                       filterId="status"
                       options={FILTER_VALUE_OPTIONS.status}
                     />
-                    <DataViewCheckboxFilter
-                      title="Update plan"
-                      filterId="updatePlan"
-                      options={FILTER_VALUE_OPTIONS.updatePlan}
+                    <DataViewTextFilter
+                      title="Version"
+                      filterId="version"
+                      placeholder="Filter by version"
+                      style={{ minWidth: "12rem", maxWidth: "100%" }}
+                    />
+                    {showOlmV0ListColumns && (
+                      <>
+                        <DataViewCheckboxFilter
+                          title="Cluster compatibility"
+                          filterId="clusterCompatibility"
+                          options={FILTER_VALUE_OPTIONS.clusterCompatibility}
+                        />
+                        <DataViewCheckboxFilter
+                          title="Support phase"
+                          filterId="support"
+                          options={FILTER_VALUE_OPTIONS.support}
+                        />
+                        <DataViewTextFilter
+                          title="Support phase end date"
+                          filterId="supportPhaseEnd"
+                          placeholder="Filter by support phase end date"
+                          style={{ minWidth: "14rem", maxWidth: "100%" }}
+                        />
+                      </>
+                    )}
+                    <DataViewTextFilter
+                      title="Last updated"
+                      filterId="lastUpdated"
+                      placeholder="Filter by last updated"
+                      style={{ minWidth: "14rem", maxWidth: "100%" }}
+                    />
+                    <DataViewTextFilter
+                      title="Managed namespaces"
+                      filterId="managedNamespaces"
+                      placeholder="Filter by managed namespace"
+                      style={{ minWidth: "14rem", maxWidth: "100%" }}
                     />
                   </IoDataViewFiltersWithMidActions>
                 }
@@ -1909,7 +1976,7 @@ export default function InstalledOperatorsPage() {
         onSave={(next) => onSetFilters(next as IoListFilters)}
         getEmpty={getEmptyIoListFilters}
         spec={ioListAdvFilterSpecEffective}
-        defaultAttributeWhenNoRows="status"
+        defaultAttributeWhenNoRows="name"
         idPrefix="io-list-adv"
       />
     </div>
