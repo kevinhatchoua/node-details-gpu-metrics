@@ -100,7 +100,7 @@ Contextual AI drawer invoked from multiple entry points (AI Assessment **Pre-che
 
 Catalog operators installed on the cluster, aligned with the **Cluster Update** operator table for column names and styling:
 
-- Operator (name + namespace), Version, Cluster compatibility, Update plan, Support phase, Status, Last updated, Managed namespaces, and optional row actions (kebab).
+- Operator name, Version, Cluster compatibility, Update plan, Support phase, Current phase end date, Status, Last updated, Managed namespaces, and optional row actions (kebab). Support phase labels follow the [OpenShift Operator Life Cycles](https://access.redhat.com/support/policy/updates/openshift_operators) policy (full support, maintenance support, EUS terms).
 - **Manage columns** — show or hide data columns; Operator is always shown.
 - Legend strip: **Cluster extension (OLM v1 managed)**.
 - **AI Assessment** variant for this page with Installed Operators-specific copy and pre-check context.

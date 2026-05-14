@@ -19,7 +19,7 @@ export default function OperatorsLifecyclePage() {
     {
       name: "Abot Operator",
       version: "v3.0.0",
-      supportStatus: "Full Support",
+      supportStatus: "Full support",
       lifecycleStage: "Active",
       remainingTime: "18 months",
       fullSupportEnd: "Sep 2027",
@@ -34,7 +34,7 @@ export default function OperatorsLifecyclePage() {
     {
       name: "Airflow Helm Operator",
       version: "v2.1.0",
-      supportStatus: "Full Support",
+      supportStatus: "Full support",
       lifecycleStage: "Active",
       remainingTime: "24 months",
       fullSupportEnd: "Mar 2028",
@@ -49,7 +49,7 @@ export default function OperatorsLifecyclePage() {
     {
       name: "Ansible Automation Platform",
       version: "v3.1.0",
-      supportStatus: "Maintenance Support",
+      supportStatus: "Maintenance support",
       lifecycleStage: "Maintenance",
       remainingTime: "6 months",
       fullSupportEnd: "Sep 2025",
@@ -64,7 +64,7 @@ export default function OperatorsLifecyclePage() {
     {
       name: "OpenShift GitOps",
       version: "v1.8.5",
-      supportStatus: "End of Life",
+      supportStatus: "End of life",
       lifecycleStage: "EOL",
       remainingTime: "Expired",
       fullSupportEnd: "Dec 2025",
@@ -79,7 +79,7 @@ export default function OperatorsLifecyclePage() {
     {
       name: "Red Hat OpenShift Service Mesh",
       version: "v2.4.0",
-      supportStatus: "Full Support",
+      supportStatus: "Full support",
       lifecycleStage: "Active",
       remainingTime: "30 months",
       fullSupportEnd: "Sep 2028",
@@ -144,19 +144,19 @@ export default function OperatorsLifecyclePage() {
             </p>
           </div>
           <div className="bg-[rgba(255,255,255,0.5)] dark:bg-[rgba(255,255,255,0.05)] rounded-[16px] shadow-[0px_4px_12px_0px_rgba(0,0,0,0.06)] p-[20px] border border-[rgba(0,0,0,0.1)] dark:border-[rgba(255,255,255,0.1)]">
-            <p className="text-[#4d4d4d] dark:text-[#b0b0b0] text-[13px] mb-[8px]">Full Support</p>
+            <p className="text-[#4d4d4d] dark:text-[#b0b0b0] text-[13px] mb-[8px]">Full support</p>
             <p className="font-['Red_Hat_Display:Bold',sans-serif] font-bold text-[#3e8635] dark:text-[#81c784] text-[32px]">
               {summary.fullSupport}
             </p>
           </div>
           <div className="bg-[rgba(255,255,255,0.5)] dark:bg-[rgba(255,255,255,0.05)] rounded-[16px] shadow-[0px_4px_12px_0px_rgba(0,0,0,0.06)] p-[20px] border border-[rgba(0,0,0,0.1)] dark:border-[rgba(255,255,255,0.1)]">
-            <p className="text-[#4d4d4d] dark:text-[#b0b0b0] text-[13px] mb-[8px]">Maintenance</p>
+            <p className="text-[#4d4d4d] dark:text-[#b0b0b0] text-[13px] mb-[8px]">Maintenance support</p>
             <p className="font-['Red_Hat_Display:Bold',sans-serif] font-bold text-[#ff9800] dark:text-[#ffb74d] text-[32px]">
               {summary.maintenance}
             </p>
           </div>
           <div className="bg-[rgba(255,255,255,0.5)] dark:bg-[rgba(255,255,255,0.05)] rounded-[16px] shadow-[0px_4px_12px_0px_rgba(0,0,0,0.06)] p-[20px] border border-[rgba(0,0,0,0.1)] dark:border-[rgba(255,255,255,0.1)]">
-            <p className="text-[#4d4d4d] dark:text-[#b0b0b0] text-[13px] mb-[8px]">End of Life</p>
+            <p className="text-[#4d4d4d] dark:text-[#b0b0b0] text-[13px] mb-[8px]">End of life</p>
             <p className="font-['Red_Hat_Display:Bold',sans-serif] font-bold text-[#c9190b] dark:text-[#ff6b6b] text-[32px]">
               {summary.endOfLife}
             </p>
@@ -245,9 +245,9 @@ export default function OperatorsLifecyclePage() {
                     </td>
                     <td className="py-[16px] px-[12px]">
                       <span className={`px-[12px] py-[6px] rounded-[8px] text-[12px] font-semibold inline-flex items-center gap-[6px] ${op.bgColor} ${op.statusColor}`}>
-                        {op.supportStatus === "End of Life" ? (
+                        {op.supportStatus === "End of life" ? (
                           <AlertCircle className="size-[14px]" />
-                        ) : op.supportStatus === "Maintenance Support" ? (
+                        ) : op.supportStatus === "Maintenance support" ? (
                           <Clock className="size-[14px]" />
                         ) : (
                           <CheckCircle className="size-[14px]" />
@@ -396,19 +396,19 @@ export default function OperatorsLifecyclePage() {
                 </p>
                 <div className="grid grid-cols-3 gap-[16px] text-[13px]">
                   <div>
-                    <p className="font-semibold text-[#3e8635] dark:text-[#81c784] mb-[4px]">Full Support</p>
+                    <p className="font-semibold text-[#3e8635] dark:text-[#81c784] mb-[4px]">Full support</p>
                     <p className="text-[#4d4d4d] dark:text-[#b0b0b0]">
                       Receives bug fixes, security updates, and new features
                     </p>
                   </div>
                   <div>
-                    <p className="font-semibold text-[#ff9800] dark:text-[#ffb74d] mb-[4px]">Maintenance Support</p>
+                    <p className="font-semibold text-[#ff9800] dark:text-[#ffb74d] mb-[4px]">Maintenance support</p>
                     <p className="text-[#4d4d4d] dark:text-[#b0b0b0]">
                       Receives critical security fixes only
                     </p>
                   </div>
                   <div>
-                    <p className="font-semibold text-[#c9190b] dark:text-[#ff6b6b] mb-[4px]">End of Life (EOL)</p>
+                    <p className="font-semibold text-[#c9190b] dark:text-[#ff6b6b] mb-[4px]">End of life (EOL)</p>
                     <p className="text-[#4d4d4d] dark:text-[#b0b0b0]">
                       No longer receives any updates or support
                     </p>

@@ -15,6 +15,7 @@ import {
   Columns2,
   Globe,
 } from "@/lib/pfIcons";
+import AngleRightIcon from "@patternfly/react-icons/dist/esm/icons/angle-right-icon";
 import { usePatternFlyGlassActive } from "@/lib/usePatternFlyGlassActive";
 import { Link, useNavigate } from "react-router";
 import {
@@ -75,17 +76,20 @@ import {
 import { IoDataViewFiltersWithMidActions } from "../../components/dataView/IoDataViewFiltersWithMidActions";
 import {
   formatLifecycleDateShort,
+  getCurrentPhaseDateLabelUrgency,
   getCurrentPhaseEndDateRaw,
   getCurrentPhaseEndSortTimestamp,
+  getDaysUntilCurrentPhaseEnd,
   getDerivedSupportPhase,
   getSupportLifecycleDateEntries,
   getSupportLifecycleSortTimestamp,
   RH_OPERATOR_LC_DOC_URL,
   type OperatorSupportLifecycle,
+  type PhaseDateLabelUrgency,
   type SupportPhase,
 } from "@/lib/operatorSupportLifecycle";
 
-export type { OperatorSupportLifecycle, SupportPhase } from "@/lib/operatorSupportLifecycle";
+export type { OperatorSupportLifecycle, PhaseDateLabelUrgency, SupportPhase } from "@/lib/operatorSupportLifecycle";
 
 const CLUSTER_TARGET_VERSION = "5.1.10";
 const CLUSTER_CHANNEL = "fast-5.1";
@@ -117,7 +121,7 @@ const TABLE_COLUMN_OPTIONS: { key: DataColumnKey; label: string }[] = [
   { key: "clusterCompatibility", label: "Cluster compatibility" },
   { key: "updatePlan", label: "Update plan" },
   { key: "support", label: "Support phase" },
-  { key: "supportPhaseEnd", label: "Support phase end date" },
+  { key: "supportPhaseEnd", label: "Current phase end date" },
   { key: "status", label: "Status" },
   { key: "lastUpdated", label: "Last updated" },
   { key: "managedNamespaces", label: "Managed namespaces" },
@@ -129,7 +133,7 @@ const DEFAULT_MANAGE_COLUMN_ORDER: { key: TableColumnKey; label: string }[] = [
   { key: "status", label: "Status" },
   { key: "clusterCompatibility", label: "Cluster compatibility" },
   { key: "support", label: "Support phase" },
-  { key: "supportPhaseEnd", label: "Support phase end date" },
+  { key: "supportPhaseEnd", label: "Current phase end date" },
   { key: "lastUpdated", label: "Last updated" },
 ];
 
@@ -202,11 +206,11 @@ const FILTER_VALUE_OPTIONS: Record<
     { value: "Incompatible", label: "Incompatible" },
   ],
   support: [
-    { value: "Full Support", label: "Full Support" },
-    { value: "Maintenance", label: "Maintenance" },
-    { value: "EUS1", label: "EUS1" },
-    { value: "EUS2", label: "EUS2" },
-    { value: "EUS3", label: "EUS3" },
+    { value: "Full support", label: "Full support" },
+    { value: "Maintenance support", label: "Maintenance support" },
+    { value: "EUS", label: "EUS" },
+    { value: "EUS Term 2", label: "EUS Term 2" },
+    { value: "EUS Term 3", label: "EUS Term 3" },
     { value: "End of life", label: "End of life" },
     { value: "Unsupported", label: "Unsupported" },
   ],
@@ -249,9 +253,9 @@ const IO_LIST_ADV_FILTER_SPEC: ListAdvancedAttributeSpec<keyof IoListFilters>[] 
   },
   {
     id: "supportPhaseEnd",
-    label: "Support phase end date",
+    label: "Current phase end date",
     valueKind: "text",
-    valuePlaceholder: "Filter by support phase end date",
+    valuePlaceholder: "Filter by current phase end date",
   },
   {
     id: "lastUpdated",
@@ -557,8 +561,8 @@ const INITIAL_CATALOG_OPERATORS: CatalogOperator[] = [
     autoUpdate: true,
     clusterCompatibility: "Compatible",
     supportLifecycle: {
-      fullSupportEndDate: "2027-09-01",
-      maintenanceEndDate: "2028-09-01",
+      fullSupportEndDate: "2026-02-01",
+      maintenanceEndDate: "2026-07-01",
       eolEndDate: "2028-09-01",
     },
     maxOcpVersion: "5.2",
@@ -736,6 +740,212 @@ const INITIAL_CATALOG_OPERATORS: CatalogOperator[] = [
   },
 ];
 
+type LifecycleTrackSegment = "full" | "maintenance" | "elc" | "eol";
+
+function supportLifecycleTrackSegment(phase: SupportPhase): LifecycleTrackSegment {
+  if (phase === "End of life" || phase === "Unsupported") return "eol";
+  if (phase === "Full support") return "full";
+  if (phase === "Maintenance support") return "maintenance";
+  return "elc";
+}
+
+function SupportLifecycleLinearTrack({ phase }: { phase: SupportPhase }) {
+  const seg = supportLifecycleTrackSegment(phase);
+  const stepCn = (s: LifecycleTrackSegment) =>
+    ["ocs-io-lifecycle-track__step", seg === s && seg !== "eol" ? "ocs-io-lifecycle-track__step--active" : ""]
+      .filter(Boolean)
+      .join(" ");
+  const arrow = (
+    <AngleRightIcon
+      className="ocs-io-lifecycle-track__arrow"
+      aria-hidden
+    />
+  );
+
+  return (
+    <Flex direction={{ default: "column" }} gap={{ default: "gapSm" }} className="ocs-io-lifecycle-track">
+      <Flex
+        alignItems={{ default: "alignItemsCenter" }}
+        gap={{ default: "gapXs" }}
+        flexWrap={{ default: "wrap" }}
+        className="ocs-io-lifecycle-track__row"
+      >
+        <span className={stepCn("full")}>Full support</span>
+        {arrow}
+        <span className={stepCn("maintenance")}>Maintenance support</span>
+        {arrow}
+        <span className={stepCn("elc")}>Extended life cycle</span>
+      </Flex>
+      {seg === "eol" ? (
+        <Content component="p" className="ocs-io-lifecycle-track__eol-note pf-v6-u-font-size-sm pf-v6-u-mb-0">
+          <strong>Current:</strong> End of life — past the published milestones below.
+        </Content>
+      ) : null}
+    </Flex>
+  );
+}
+
+function PhaseEndDateTooltipBody({ op, urgency }: { op: OperatorRow; urgency: PhaseDateLabelUrgency }) {
+  const phase = getDerivedSupportPhase(op);
+  const days = getDaysUntilCurrentPhaseEnd(op);
+
+  const policyLink = (
+    <Button
+      variant="link"
+      icon={<ExternalLink />}
+      iconPosition="right"
+      component="a"
+      href={RH_OPERATOR_LC_DOC_URL}
+      target="_blank"
+      rel="noopener noreferrer"
+    >
+      Operator life cycles policy
+    </Button>
+  );
+
+  const clusterUpdateLink = (
+    <Button variant="link" component={Link} to="/administration/cluster-update">
+      Update cluster
+    </Button>
+  );
+
+  const operatorUpdateLink =
+    op.updateAvailable != null && op.updateAvailable !== "" ? (
+      <Button
+        variant="link"
+        component={Link}
+        to={`/ecosystem/installed-operators/${encodeURIComponent(op.name)}/update`}
+        state={{
+          returnTo: "/ecosystem/installed-operators",
+          operatorName: op.name,
+          operatorData: op,
+        }}
+      >
+        Update operator
+      </Button>
+    ) : null;
+
+  if (urgency === "danger") {
+    return (
+      <div className="ocs-io-phase-end-date-tooltip-body">
+        <Flex direction={{ default: "column" }} gap={{ default: "gapSm" }} alignItems={{ default: "alignItemsStart" }}>
+          <Content component="p" className="pf-v6-u-mb-0">
+            {phase === "Unsupported"
+              ? "This installation is not represented as entitled Red Hat support in this prototype. Confirm subscription and catalog sources before production upgrades."
+              : "Published support for this operator version has ended. Remaining on this version increases risk when you plan cluster updates."}
+          </Content>
+          <Flex
+            direction={{ default: "column" }}
+            gap={{ default: "gapXs" }}
+            alignItems={{ default: "alignItemsStart" }}
+            className="pf-v6-u-font-size-sm"
+          >
+            <strong className="ocs-io-phase-end-date-tooltip-body__heading">Recommended</strong>
+            {operatorUpdateLink ?? (
+              <Content component="small">Move to a supported operator version via your catalog or channel.</Content>
+            )}
+            {clusterUpdateLink}
+            {policyLink}
+          </Flex>
+        </Flex>
+      </div>
+    );
+  }
+
+  if (urgency === "warning") {
+    const phaseWords =
+      phase === "Maintenance support" ? "maintenance support" : "extended life cycle (published EUS terms)";
+    return (
+      <div className="ocs-io-phase-end-date-tooltip-body">
+        <Flex direction={{ default: "column" }} gap={{ default: "gapSm" }} alignItems={{ default: "alignItemsStart" }}>
+          <Content component="p" className="pf-v6-u-mb-0">
+            {days !== undefined ? (
+              <>
+                <strong>{days}</strong>
+                {` day${days === 1 ? "" : "s"} left in the current ${phaseWords} window for this version. Plan an operator update before this date to stay aligned with cluster upgrades.`}
+              </>
+            ) : (
+              "This support window is ending soon. Plan an operator update before published boundaries change."
+            )}
+          </Content>
+          <Flex
+            direction={{ default: "column" }}
+            gap={{ default: "gapXs" }}
+            alignItems={{ default: "alignItemsStart" }}
+            className="pf-v6-u-font-size-sm"
+          >
+            <strong className="ocs-io-phase-end-date-tooltip-body__heading">Recommended</strong>
+            {operatorUpdateLink ?? (
+              <Content component="small">Check your channel for a newer operator minor.</Content>
+            )}
+            {clusterUpdateLink}
+            {policyLink}
+          </Flex>
+        </Flex>
+      </div>
+    );
+  }
+
+  if (urgency === "success") {
+    return (
+      <div className="ocs-io-phase-end-date-tooltip-body">
+        <Flex direction={{ default: "column" }} gap={{ default: "gapSm" }} alignItems={{ default: "alignItemsStart" }}>
+          <Content component="p" className="pf-v6-u-mb-0">
+            You are in full support for this published version. Use this period to validate newer operator releases and
+            align with your cluster update schedule.
+          </Content>
+          <Flex
+            direction={{ default: "column" }}
+            gap={{ default: "gapXs" }}
+            alignItems={{ default: "alignItemsStart" }}
+            className="pf-v6-u-font-size-sm"
+          >
+            <strong className="ocs-io-phase-end-date-tooltip-body__heading">Suggested next steps</strong>
+            {operatorUpdateLink}
+            {clusterUpdateLink}
+            {policyLink}
+          </Flex>
+        </Flex>
+      </div>
+    );
+  }
+
+  return (
+    <div className="ocs-io-phase-end-date-tooltip-body">
+      <Flex direction={{ default: "column" }} gap={{ default: "gapSm" }} alignItems={{ default: "alignItemsStart" }}>
+        <Content component="p" className="pf-v6-u-mb-0">
+          You are in {phase === "Maintenance support" ? "maintenance support" : "extended life cycle"} with time before
+          the next published milestone. Add operator updates to your change calendar ahead of cluster upgrades.
+        </Content>
+        <Flex
+          direction={{ default: "column" }}
+          gap={{ default: "gapXs" }}
+          alignItems={{ default: "alignItemsStart" }}
+          className="pf-v6-u-font-size-sm"
+        >
+          <strong className="ocs-io-phase-end-date-tooltip-body__heading">Suggested next steps</strong>
+          {operatorUpdateLink}
+          {clusterUpdateLink}
+          {policyLink}
+        </Flex>
+      </Flex>
+    </div>
+  );
+}
+
+function phaseDateLabelPfColor(urgency: PhaseDateLabelUrgency): "green" | "orange" | "red" | "grey" {
+  switch (urgency) {
+    case "success":
+      return "green";
+    case "warning":
+      return "orange";
+    case "danger":
+      return "red";
+    default:
+      return "grey";
+  }
+}
+
 /** Shared caveat in lifecycle popovers (SKU / extended support may differ from displayed phase). */
 function SupportPhaseSkuPopoverNote() {
   return (
@@ -777,6 +987,11 @@ function SupportLifecyclePopoverContents({ op }: { op: OperatorRow }) {
 
   return (
     <>
+      <SupportLifecycleLinearTrack phase={getDerivedSupportPhase(op)} />
+      <Content component="p" className="pf-v6-u-font-size-sm pf-v6-u-mb-md">
+        Extended life cycle groups published <strong>EUS</strong> milestones (EUS ends, EUS Term 2/3 ends) from the
+        operator policy tables.
+      </Content>
       {entries.length > 0 ? (
         <DescriptionList isCompact isHorizontal termWidth="12rem">
           {entries.map((row) => (
@@ -818,7 +1033,7 @@ function InstalledOperatorSupportPhaseCell({ op }: { op: OperatorRow }) {
   const phaseLabel = op.isOlmV1Extension ? "—" : getDerivedSupportPhase(op);
   const popoverAriaLabel = op.isOlmV1Extension
     ? "Support phase and OLM v1 extensions"
-    : `Lifecycle dates for ${op.name}`;
+    : `Operator lifecycle for ${op.name}`;
   const bodyContent = op.isOlmV1Extension ? (
     <OlmV1ExtensionSupportPopoverContents />
   ) : (
@@ -835,10 +1050,10 @@ function InstalledOperatorSupportPhaseCell({ op }: { op: OperatorRow }) {
     >
       <Popover
         aria-label={popoverAriaLabel}
-        headerContent={<Title headingLevel="h6">Lifecycle dates</Title>}
+        headerContent={<Title headingLevel="h6">Operator lifecycle</Title>}
         bodyContent={bodyContent}
         position="auto"
-        maxWidth="min(22rem, 90vw)"
+        maxWidth="min(28rem, 92vw)"
         appendTo={() => document.body}
       >
         <Button
@@ -863,7 +1078,26 @@ function InstalledOperatorSupportPhaseEndCell({ op }: { op: OperatorRow }) {
   }
   const raw = getCurrentPhaseEndDateRaw(op);
   const formatted = raw ? formatLifecycleDateShort(raw) : "—";
-  return <Content component="small">{formatted}</Content>;
+  if (formatted === "—") {
+    return <Content component="small">—</Content>;
+  }
+  const urgency = getCurrentPhaseDateLabelUrgency(op);
+  const color = phaseDateLabelPfColor(urgency);
+
+  return (
+    <Tooltip
+      content={<PhaseEndDateTooltipBody op={op} urgency={urgency} />}
+      position="top"
+      maxWidth="24rem"
+      isContentLeftAligned
+    >
+      <span className="ocs-io-phase-end-date-tooltip-target" tabIndex={0}>
+        <Label isCompact variant="outline" color={color} className="ocs-io-phase-end-date-label">
+          {formatted}
+        </Label>
+      </span>
+    </Tooltip>
+  );
 }
 
 type InstalledCatalogKindTab = "olmv0" | "olmv1";
@@ -1360,9 +1594,9 @@ export default function InstalledOperatorsPage() {
                           options={FILTER_VALUE_OPTIONS.support}
                         />
                         <DataViewTextFilter
-                          title="Support phase end date"
+                          title="Current phase end date"
                           filterId="supportPhaseEnd"
-                          placeholder="Match end date text"
+                          placeholder="Match current phase end date"
                           style={{ minWidth: "14rem", maxWidth: "100%" }}
                         />
                       </>
@@ -1430,8 +1664,8 @@ export default function InstalledOperatorsPage() {
                         <Th dataLabel="Support phase">{renderSortableHeader("Support phase", "support")}</Th>
                       )}
                       {showOlmV0ListColumns && visibleColumns.supportPhaseEnd && (
-                        <Th dataLabel="Support phase end date">
-                          {renderSortableHeader("Support phase end date", "supportPhaseEnd")}
+                        <Th dataLabel="Current phase end date">
+                          {renderSortableHeader("Current phase end date", "supportPhaseEnd")}
                         </Th>
                       )}
                       {visibleColumns.lastUpdated && (
@@ -1554,7 +1788,7 @@ export default function InstalledOperatorsPage() {
                             </Td>
                           )}
                           {showOlmV0ListColumns && visibleColumns.supportPhaseEnd && (
-                            <Td dataLabel="Support phase end date" modifier="nowrap">
+                            <Td dataLabel="Current phase end date" modifier="nowrap">
                               <InstalledOperatorSupportPhaseEndCell op={op} />
                             </Td>
                           )}
@@ -1669,7 +1903,7 @@ export default function InstalledOperatorsPage() {
           labelId="io-manage-cols-title"
           descriptorId="io-manage-cols-body"
           title="Manage columns"
-          description="Default columns are shown by default. Additional columns include update plan, managed namespaces, and optional row actions. Cluster compatibility, Support phase, and Support phase end date apply to OLM v0 managed operators only. Operator is always shown."
+          description="Default columns are shown by default. Additional columns include update plan, managed namespaces, and optional row actions. Cluster compatibility, Support phase, and Current phase end date apply to OLM v0 managed operators only. Operator is always shown."
         />
         <ModalBody id="io-manage-cols-body">
           <Flex

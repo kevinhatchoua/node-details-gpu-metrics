@@ -1126,6 +1126,105 @@ html.dark .ocs-io-operator-table .ocs-operator-table-sort.pf-v6-c-button.pf-m-pl
   color: var(--pf-t--global--text--color--subtle, var(--pf-t--global--text--color--secondary));
 }
 
+/* Linear lifecycle track (Full support → Maintenance → Extended life cycle) in lifecycle popover */
+.ocs-io-lifecycle-track .ocs-io-lifecycle-track__row {
+  row-gap: var(--pf-t--global--spacer--xs);
+}
+.ocs-io-lifecycle-track__step {
+  display: inline-block;
+  font-size: var(--pf-t--global--font--size--body--default);
+  padding: 0.125rem 0.375rem;
+  border-radius: var(--pf-t--global--border--radius--small);
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+.ocs-io-lifecycle-track__step--active {
+  font-weight: var(--pf-t--global--font--weight--body--bold);
+  border-color: var(--pf-t--global--border--color--default);
+  background: var(--pf-t--global--background--color--secondary--default);
+}
+.ocs-io-lifecycle-track__arrow {
+  width: 0.875em;
+  height: 0.875em;
+  flex-shrink: 0;
+  opacity: 0.65;
+  color: var(--pf-t--global--icon--color--subtle, var(--pf-t--global--text--color--secondary));
+}
+.ocs-io-phase-end-date-tooltip-target {
+  display: inline-block;
+  cursor: default;
+  border-radius: var(--pf-t--global--border--radius--small);
+}
+.ocs-io-phase-end-date-tooltip-target:focus {
+  outline: none;
+}
+.ocs-io-phase-end-date-tooltip-target:focus-visible {
+  outline: 2px solid var(--pf-t--global--color--brand--default, #06c);
+  outline-offset: 2px;
+}
+
+/**
+ * Phase end date tooltip: `Content` uses `--pf-v6-c-content--Color`, which follows the **page**
+ * shell (dark theme → near-white text). The tooltip uses PatternFly inverse surface colors.
+ * Without a reset, copy inherits shell tokens → illegible light-on-light. Re-bind `Content`
+ * to the tooltip surface.
+ *
+ * Link buttons: in `html.dark` + glass, tooltip panels are often **light** while PF `variant="link"`
+ * still resolves brand to **on-dark** tints → illegible contrast. Force palette blues + plain hover
+ * chip so default, hover, active, and focus stay WCAG-readable on frosted/light tooltip surfaces.
+ */
+.pf-v6-c-tooltip__content .ocs-io-phase-end-date-tooltip-body {
+  --pf-v6-c-content--Color: var(--pf-v6-c-tooltip__content--Color);
+  --pf-v6-c-content--small--Color: color-mix(
+    in srgb,
+    var(--pf-v6-c-tooltip__content--Color) 82%,
+    transparent
+  );
+  text-align: start;
+  max-width: 22rem;
+}
+.pf-v6-c-tooltip__content .ocs-io-phase-end-date-tooltip-body .pf-v6-c-content {
+  color: var(--pf-v6-c-tooltip__content--Color) !important;
+}
+.pf-v6-c-tooltip__content .ocs-io-phase-end-date-tooltip-body .pf-v6-c-content.pf-m-small {
+  color: var(--pf-v6-c-content--small--Color) !important;
+}
+.pf-v6-c-tooltip__content .ocs-io-phase-end-date-tooltip-body .ocs-io-phase-end-date-tooltip-body__heading {
+  color: var(--pf-v6-c-tooltip__content--Color) !important;
+  font-weight: var(--pf-t--global--font--weight--heading--bold);
+  display: block;
+}
+.pf-v6-c-tooltip__content .ocs-io-phase-end-date-tooltip-body .pf-v6-c-button.pf-m-link {
+  --pf-v6-c-button--m-link--Color: var(--pf-color-blue-60);
+  --pf-v6-c-button--m-link__icon--Color: var(--pf-color-blue-60);
+  --pf-v6-c-button--m-link--BackgroundColor: transparent;
+  --pf-v6-c-button--m-link--hover--Color: #003d73;
+  --pf-v6-c-button--m-link--hover__icon--Color: #003d73;
+  --pf-v6-c-button--m-link--hover--BackgroundColor: var(--pf-color-blue-10);
+  --pf-v6-c-button--m-link--m-clicked--Color: #003d73;
+  --pf-v6-c-button--m-link--m-clicked__icon--Color: #003d73;
+  --pf-v6-c-button--m-link--m-clicked--BackgroundColor: var(--pf-color-blue-20);
+  justify-content: flex-start;
+  width: fit-content;
+  max-width: 100%;
+  text-align: start;
+}
+.pf-v6-c-tooltip__content .ocs-io-phase-end-date-tooltip-body .pf-v6-c-button.pf-m-link.pf-m-inline {
+  --pf-v6-c-button--m-link--m-inline--Color: var(--pf-color-blue-60);
+  --pf-v6-c-button--m-link--m-inline__icon--Color: var(--pf-color-blue-60);
+  --pf-v6-c-button--m-link--m-inline--hover--Color: #003d73;
+  --pf-v6-c-button--m-link--m-inline--hover__icon--Color: #003d73;
+}
+.pf-v6-c-tooltip__content .ocs-io-phase-end-date-tooltip-body .pf-v6-c-button.pf-m-link:focus-visible {
+  outline: 2px solid var(--pf-color-blue-50);
+  outline-offset: 2px;
+}
+
+/* Date label on data table: keep outline label text readable on primary/dark row backgrounds. */
+.ocs-io-operator-table .ocs-io-phase-end-date-label.pf-v6-c-label {
+  --pf-v6-c-label--Color: var(--pf-t--global--text--color--regular);
+}
+
 /**
  * All pages: main column aligns with nav; single chrome inset (no top stack); glass gap unchanged.
  */
