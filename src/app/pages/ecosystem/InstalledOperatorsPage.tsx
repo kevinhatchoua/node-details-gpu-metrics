@@ -15,7 +15,7 @@ import {
   Columns2,
   Globe,
 } from "@/lib/pfIcons";
-import AngleRightIcon from "@patternfly/react-icons/dist/esm/icons/angle-right-icon";
+import ExclamationTriangleIcon from "@patternfly/react-icons/dist/esm/icons/exclamation-triangle-icon";
 import { usePatternFlyGlassActive } from "@/lib/usePatternFlyGlassActive";
 import { Link, useNavigate } from "react-router";
 import {
@@ -742,6 +742,13 @@ const INITIAL_CATALOG_OPERATORS: CatalogOperator[] = [
 
 type LifecycleTrackSegment = "full" | "maintenance" | "elc" | "eol";
 
+/** PatternFly Progress Stepper success icon (matches PF docs). */
+const PF_PROGRESS_STEPPER_CHECK_ICON = (
+  <svg className="pf-v6-svg" viewBox="0 0 32 32" fill="currentColor" aria-hidden width="1em" height="1em" role="img">
+    <path d="M16 1C7.729 1 1 7.729 1 16s6.729 15 15 15 15-6.729 15-15S24.271 1 16 1Zm7.795 11.795-8.646 8.646c-.317.317-.733.475-1.149.475s-.832-.158-1.149-.475l-4.646-4.646a1.126 1.126 0 0 1 1.591-1.591l4.205 4.205 8.205-8.205a1.126 1.126 0 0 1 1.591 1.591Z" />
+  </svg>
+);
+
 function supportLifecycleTrackSegment(phase: SupportPhase): LifecycleTrackSegment {
   if (phase === "End of life" || phase === "Unsupported") return "eol";
   if (phase === "Full support") return "full";
@@ -749,35 +756,112 @@ function supportLifecycleTrackSegment(phase: SupportPhase): LifecycleTrackSegmen
   return "elc";
 }
 
-function SupportLifecycleLinearTrack({ phase }: { phase: SupportPhase }) {
+type LifecycleStepperVisual = "success" | "current" | "pending" | "danger";
+
+function lifecycleProgressStepStates(seg: LifecycleTrackSegment): [
+  LifecycleStepperVisual,
+  LifecycleStepperVisual,
+  LifecycleStepperVisual,
+] {
+  switch (seg) {
+    case "full":
+      return ["current", "pending", "pending"];
+    case "maintenance":
+      return ["success", "current", "pending"];
+    case "elc":
+      return ["success", "success", "current"];
+    case "eol":
+      return ["success", "success", "danger"];
+  }
+}
+
+function lifecycleProgressStepClass(v: LifecycleStepperVisual): string {
+  const base = "pf-v6-c-progress-stepper__step";
+  if (v === "success") return `${base} pf-m-success`;
+  if (v === "current") return `${base} pf-m-current`;
+  if (v === "danger") return `${base} pf-m-danger`;
+  return `${base} pf-m-pending`;
+}
+
+function lifecycleProgressStepAriaLabel(v: LifecycleStepperVisual, title: string): string {
+  if (v === "success") return `Completed step: ${title}`;
+  if (v === "current") return `Current step, in process: ${title}`;
+  if (v === "danger") return `Ended: ${title}`;
+  return `Pending step: ${title}`;
+}
+
+function LifecycleProgressStepIcon({ visual }: { visual: LifecycleStepperVisual }) {
+  if (visual === "success") {
+    return <span className="pf-v6-c-progress-stepper__step-icon">{PF_PROGRESS_STEPPER_CHECK_ICON}</span>;
+  }
+  if (visual === "current") {
+    return (
+      <span className="pf-v6-c-progress-stepper__step-icon">
+        <i className="pf-v6-pficon pf-v6-pficon-resources-full" aria-hidden />
+      </span>
+    );
+  }
+  if (visual === "danger") {
+    return (
+      <span className="pf-v6-c-progress-stepper__step-icon">
+        <ExclamationTriangleIcon className="fa-exclamation-triangle" aria-hidden />
+      </span>
+    );
+  }
+  return <span className="pf-v6-c-progress-stepper__step-icon" />;
+}
+
+/**
+ * Published operator lifecycle buckets (policy tables), as a PatternFly Progress Stepper.
+ * @see https://www.patternfly.org/components/progress-stepper
+ */
+function SupportLifecycleProgressStepper({ phase }: { phase: SupportPhase }) {
   const seg = supportLifecycleTrackSegment(phase);
-  const stepCn = (s: LifecycleTrackSegment) =>
-    ["ocs-io-lifecycle-track__step", seg === s && seg !== "eol" ? "ocs-io-lifecycle-track__step--active" : ""]
-      .filter(Boolean)
-      .join(" ");
-  const arrow = (
-    <AngleRightIcon
-      className="ocs-io-lifecycle-track__arrow"
-      aria-hidden
-    />
-  );
+  const [v1, v2, v3] = lifecycleProgressStepStates(seg);
+  const step3Title = v3 === "danger" ? "End of life" : "Extended life cycle";
 
   return (
-    <Flex direction={{ default: "column" }} gap={{ default: "gapSm" }} className="ocs-io-lifecycle-track">
-      <Flex
-        alignItems={{ default: "alignItemsCenter" }}
-        gap={{ default: "gapXs" }}
-        flexWrap={{ default: "wrap" }}
-        className="ocs-io-lifecycle-track__row"
-      >
-        <span className={stepCn("full")}>Full support</span>
-        {arrow}
-        <span className={stepCn("maintenance")}>Maintenance support</span>
-        {arrow}
-        <span className={stepCn("elc")}>Extended life cycle</span>
-      </Flex>
+    <Flex direction={{ default: "column" }} gap={{ default: "gapSm" }} className="ocs-io-lifecycle-stepper-wrap">
+      <ol className="pf-v6-c-progress-stepper ocs-io-lifecycle-stepper" role="list" aria-label="Operator support lifecycle progression">
+        <li
+          className={lifecycleProgressStepClass(v1)}
+          role="listitem"
+          aria-label={lifecycleProgressStepAriaLabel(v1, "Full support")}
+        >
+          <div className="pf-v6-c-progress-stepper__step-connector">
+            <LifecycleProgressStepIcon visual={v1} />
+          </div>
+          <div className="pf-v6-c-progress-stepper__step-main">
+            <div className="pf-v6-c-progress-stepper__step-title">Full support</div>
+          </div>
+        </li>
+        <li
+          className={lifecycleProgressStepClass(v2)}
+          role="listitem"
+          aria-label={lifecycleProgressStepAriaLabel(v2, "Maintenance support")}
+        >
+          <div className="pf-v6-c-progress-stepper__step-connector">
+            <LifecycleProgressStepIcon visual={v2} />
+          </div>
+          <div className="pf-v6-c-progress-stepper__step-main">
+            <div className="pf-v6-c-progress-stepper__step-title">Maintenance support</div>
+          </div>
+        </li>
+        <li
+          className={lifecycleProgressStepClass(v3)}
+          role="listitem"
+          aria-label={lifecycleProgressStepAriaLabel(v3, step3Title)}
+        >
+          <div className="pf-v6-c-progress-stepper__step-connector">
+            <LifecycleProgressStepIcon visual={v3} />
+          </div>
+          <div className="pf-v6-c-progress-stepper__step-main">
+            <div className="pf-v6-c-progress-stepper__step-title">{step3Title}</div>
+          </div>
+        </li>
+      </ol>
       {seg === "eol" ? (
-        <Content component="p" className="ocs-io-lifecycle-track__eol-note pf-v6-u-font-size-sm pf-v6-u-mb-0">
+        <Content component="p" className="ocs-io-lifecycle-stepper__eol-note pf-v6-u-font-size-sm pf-v6-u-mb-0">
           <strong>Current:</strong> End of life — past the published milestones below.
         </Content>
       ) : null}
@@ -987,7 +1071,7 @@ function SupportLifecyclePopoverContents({ op }: { op: OperatorRow }) {
 
   return (
     <>
-      <SupportLifecycleLinearTrack phase={getDerivedSupportPhase(op)} />
+      <SupportLifecycleProgressStepper phase={getDerivedSupportPhase(op)} />
       <Content component="p" className="pf-v6-u-font-size-sm pf-v6-u-mb-md">
         Extended life cycle groups published <strong>EUS</strong> milestones (EUS ends, EUS Term 2/3 ends) from the
         operator policy tables.

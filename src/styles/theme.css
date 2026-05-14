@@ -1126,29 +1126,16 @@ html.dark .ocs-io-operator-table .ocs-operator-table-sort.pf-v6-c-button.pf-m-pl
   color: var(--pf-t--global--text--color--subtle, var(--pf-t--global--text--color--secondary));
 }
 
-/* Linear lifecycle track (Full support → Maintenance → Extended life cycle) in lifecycle popover */
-.ocs-io-lifecycle-track .ocs-io-lifecycle-track__row {
-  row-gap: var(--pf-t--global--spacer--xs);
+/* PatternFly Progress Stepper — operator lifecycle popover: breathing room from popover edges */
+.ocs-io-lifecycle-stepper-wrap {
+  margin-block: var(--pf-t--global--spacer--md);
+  margin-inline: 0;
+  padding-block: var(--pf-t--global--spacer--sm);
+  padding-inline: var(--pf-t--global--spacer--md);
 }
-.ocs-io-lifecycle-track__step {
-  display: inline-block;
-  font-size: var(--pf-t--global--font--size--body--default);
-  padding: 0.125rem 0.375rem;
-  border-radius: var(--pf-t--global--border--radius--small);
-  border: 1px solid transparent;
-  white-space: nowrap;
-}
-.ocs-io-lifecycle-track__step--active {
-  font-weight: var(--pf-t--global--font--weight--body--bold);
-  border-color: var(--pf-t--global--border--color--default);
-  background: var(--pf-t--global--background--color--secondary--default);
-}
-.ocs-io-lifecycle-track__arrow {
-  width: 0.875em;
-  height: 0.875em;
-  flex-shrink: 0;
-  opacity: 0.65;
-  color: var(--pf-t--global--icon--color--subtle, var(--pf-t--global--text--color--secondary));
+.ocs-io-lifecycle-stepper.pf-v6-c-progress-stepper {
+  /* Slightly tighter titles in narrow popovers while keeping PF layout */
+  --pf-v6-c-progress-stepper__step-title--FontSize: var(--pf-t--global--font--size--body--default);
 }
 .ocs-io-phase-end-date-tooltip-target {
   display: inline-block;
