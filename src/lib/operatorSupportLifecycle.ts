@@ -131,6 +131,28 @@ export function getSupportLifecycleSortTimestamp(op: {
   return Number.MAX_SAFE_INTEGER - 1;
 }
 
+/** Lifecycle progression order for Support phase column sort (not alphabetical). */
+const SUPPORT_PHASE_SORT_RANK: Record<SupportPhase, number> = {
+  "Full support": 0,
+  "Maintenance support": 1,
+  EUS: 2,
+  "EUS Term 2": 3,
+  "EUS Term 3": 4,
+  "End of life": 5,
+  Unsupported: 6,
+};
+
+/** Rank for sorting the Support phase column; lower = earlier in ascending “healthiest first” order. */
+export function getSupportPhaseSortRank(
+  op: Pick<
+    { supportLifecycle?: OperatorSupportLifecycle; isUnsupported?: boolean; isOlmV1Extension?: boolean },
+    "supportLifecycle" | "isUnsupported" | "isOlmV1Extension"
+  >
+): number {
+  if (op.isOlmV1Extension) return 99;
+  return SUPPORT_PHASE_SORT_RANK[getDerivedSupportPhase(op)];
+}
+
 /** Maps lifecycle phase to PatternFly Label `status` (semantic color + icon). */
 export function getPhaseLabelStatus(phase: SupportPhase): "success" | "warning" | "danger" {
   switch (phase) {

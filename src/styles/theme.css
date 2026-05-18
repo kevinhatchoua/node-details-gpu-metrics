@@ -1128,15 +1128,22 @@ html.dark .ocs-io-operator-table .ocs-operator-table-sort.pf-v6-c-button.pf-m-pl
 
 /* PatternFly Progress Stepper — operator lifecycle popover: breathing room from popover edges */
 .ocs-io-lifecycle-stepper-wrap {
+  align-self: stretch;
+  box-sizing: border-box;
   margin-block: var(--pf-t--global--spacer--md);
   margin-inline: 0;
   padding-block: var(--pf-t--global--spacer--sm);
   padding-inline: var(--pf-t--global--spacer--md);
+  width: 100%;
 }
+/** Lifecycle popover: pf-m-horizontal + pf-m-center on the stepper (see PF Progress Stepper docs). */
 .ocs-io-lifecycle-stepper.pf-v6-c-progress-stepper {
-  /* Slightly tighter titles in narrow popovers while keeping PF layout */
-  --pf-v6-c-progress-stepper__step-title--FontSize: var(--pf-t--global--font--size--body--default);
+  box-sizing: border-box;
+  max-width: 100%;
+  width: 100%;
+  --pf-v6-c-progress-stepper__step-title--FontSize: var(--pf-t--global--font--size--body--sm);
 }
+
 .ocs-io-phase-end-date-tooltip-target {
   display: inline-block;
   cursor: default;

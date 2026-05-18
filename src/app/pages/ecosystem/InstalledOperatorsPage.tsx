@@ -51,6 +51,7 @@ import {
   Tooltip,
   ToolbarGroup,
   ToolbarItem,
+  Switch,
 } from "@patternfly/react-core";
 import {
   DataView,
@@ -74,6 +75,7 @@ import {
   type ListAdvancedAttributeSpec,
 } from "../../components/dataView/ListAdvancedFilterModal";
 import { IoDataViewFiltersWithMidActions } from "../../components/dataView/IoDataViewFiltersWithMidActions";
+import { ADDITIONAL_CATALOG_OPERATORS } from "./installedOperatorsFixtureData";
 import {
   formatLifecycleDateShort,
   getCurrentPhaseDateLabelUrgency,
@@ -82,7 +84,7 @@ import {
   getDaysUntilCurrentPhaseEnd,
   getDerivedSupportPhase,
   getSupportLifecycleDateEntries,
-  getSupportLifecycleSortTimestamp,
+  getSupportPhaseSortRank,
   RH_OPERATOR_LC_DOC_URL,
   type OperatorSupportLifecycle,
   type PhaseDateLabelUrgency,
@@ -324,7 +326,7 @@ type InstalledOperator = {
   managedNamespaces?: string[];
 };
 
-type CatalogOperator = InstalledOperator & {
+export type CatalogOperator = InstalledOperator & {
   requiredBeforeClusterUpdate?: boolean;
   isOlmV1Extension?: boolean;
 };
@@ -446,15 +448,24 @@ function sortOperatorRows(rows: OperatorRow[], key: SortColumnKey, dir: "asc" | 
       case "support": {
         const ta = a.isOlmV1Extension ? 1 : 0;
         const tb = b.isOlmV1Extension ? 1 : 0;
-        if (ta !== tb) return ta - tb;
+        if (ta !== tb) {
+          cmp = ta - tb;
+          break;
+        }
         if (ta === 1) cmp = 0;
-        else cmp = getSupportLifecycleSortTimestamp(a) - getSupportLifecycleSortTimestamp(b);
+        else {
+          cmp = getSupportPhaseSortRank(a) - getSupportPhaseSortRank(b);
+          if (cmp === 0) cmp = getCurrentPhaseEndSortTimestamp(a) - getCurrentPhaseEndSortTimestamp(b);
+        }
         break;
       }
       case "supportPhaseEnd": {
         const ta = a.isOlmV1Extension ? 1 : 0;
         const tb = b.isOlmV1Extension ? 1 : 0;
-        if (ta !== tb) return ta - tb;
+        if (ta !== tb) {
+          cmp = ta - tb;
+          break;
+        }
         if (ta === 1) cmp = 0;
         else cmp = getCurrentPhaseEndSortTimestamp(a) - getCurrentPhaseEndSortTimestamp(b);
         break;
@@ -525,7 +536,10 @@ const INITIAL_CATALOG_OPERATORS: CatalogOperator[] = [
     supportLifecycle: {
       fullSupportEndDate: "2026-05-03",
       maintenanceEndDate: "2027-04-21",
-      eolEndDate: "2027-04-21",
+      eus1EndDate: "2027-10-21",
+      eus2EndDate: "2028-04-21",
+      eus3EndDate: "2028-10-21",
+      eolEndDate: "2029-04-21",
     },
     maxOcpVersion: "5.2",
     lastUpdated: "Mar 1, 2026, 3:48 AM",
@@ -544,7 +558,10 @@ const INITIAL_CATALOG_OPERATORS: CatalogOperator[] = [
     supportLifecycle: {
       fullSupportEndDate: "2027-03-20",
       maintenanceEndDate: "2028-03-20",
-      eolEndDate: "2028-03-20",
+      eus1EndDate: "2028-09-20",
+      eus2EndDate: "2029-03-20",
+      eus3EndDate: "2029-09-20",
+      eolEndDate: "2030-03-20",
     },
     updateAvailable: "4.22.0",
     maxOcpVersion: "5.0",
@@ -561,8 +578,11 @@ const INITIAL_CATALOG_OPERATORS: CatalogOperator[] = [
     autoUpdate: true,
     clusterCompatibility: "Compatible",
     supportLifecycle: {
-      fullSupportEndDate: "2026-02-01",
-      maintenanceEndDate: "2026-07-01",
+      fullSupportEndDate: "2026-01-31",
+      maintenanceEndDate: "2026-06-30",
+      eus1EndDate: "2027-06-30",
+      eus2EndDate: "2028-03-31",
+      eus3EndDate: "2028-08-15",
       eolEndDate: "2028-09-01",
     },
     maxOcpVersion: "5.2",
@@ -581,7 +601,10 @@ const INITIAL_CATALOG_OPERATORS: CatalogOperator[] = [
     supportLifecycle: {
       fullSupportEndDate: "2028-06-15",
       maintenanceEndDate: "2029-06-15",
-      eolEndDate: "2029-06-15",
+      eus1EndDate: "2030-06-15",
+      eus2EndDate: "2031-06-15",
+      eus3EndDate: "2032-03-15",
+      eolEndDate: "2032-06-15",
     },
     maxOcpVersion: "5.2",
     lastUpdated: "Mar 1, 2026, 3:48 AM",
@@ -599,11 +622,11 @@ const INITIAL_CATALOG_OPERATORS: CatalogOperator[] = [
     supportLifecycle: {
       fullSupportEndDate: "2028-06-15",
       maintenanceEndDate: "2029-06-15",
-      eolEndDate: "2029-06-15",
+      eus1EndDate: "2030-06-15",
+      eus2EndDate: "2031-06-15",
+      eus3EndDate: "2032-03-15",
+      eolEndDate: "2032-06-15",
     },
-    maxOcpVersion: "5.2",
-    lastUpdated: "Mar 1, 2026, 3:48 AM",
-    managedNamespaces: ["openshift-ingress", "openshift-ingress-operator"],
   },
   {
     name: "Machine Config Operator",
@@ -617,11 +640,11 @@ const INITIAL_CATALOG_OPERATORS: CatalogOperator[] = [
     supportLifecycle: {
       fullSupportEndDate: "2028-06-15",
       maintenanceEndDate: "2029-06-15",
-      eolEndDate: "2029-06-15",
+      eus1EndDate: "2030-06-15",
+      eus2EndDate: "2031-06-15",
+      eus3EndDate: "2032-03-15",
+      eolEndDate: "2032-06-15",
     },
-    maxOcpVersion: "5.2",
-    lastUpdated: "Mar 1, 2026, 3:48 AM",
-    managedNamespaces: ["openshift-machine-config-operator"],
   },
   {
     name: "Monitoring Stack",
@@ -635,11 +658,11 @@ const INITIAL_CATALOG_OPERATORS: CatalogOperator[] = [
     supportLifecycle: {
       fullSupportEndDate: "2028-06-15",
       maintenanceEndDate: "2029-06-15",
-      eolEndDate: "2029-06-15",
+      eus1EndDate: "2030-06-15",
+      eus2EndDate: "2031-06-15",
+      eus3EndDate: "2032-03-15",
+      eolEndDate: "2032-06-15",
     },
-    maxOcpVersion: "5.2",
-    lastUpdated: "Mar 1, 2026, 3:48 AM",
-    managedNamespaces: ["openshift-monitoring", "openshift-user-workload-monitoring"],
   },
   {
     name: "Service Mesh",
@@ -676,11 +699,11 @@ const INITIAL_CATALOG_OPERATORS: CatalogOperator[] = [
     supportLifecycle: {
       fullSupportEndDate: "2027-05-03",
       maintenanceEndDate: "2028-04-21",
-      eolEndDate: "2028-04-21",
+      eus1EndDate: "2029-04-21",
+      eus2EndDate: "2030-04-21",
+      eus3EndDate: "2031-04-21",
+      eolEndDate: "2032-04-21",
     },
-    maxOcpVersion: "5.2",
-    lastUpdated: "Mar 22, 2026, 6:00 AM",
-    managedNamespaces: ["openshift-terminal"],
   },
   {
     name: "Kiali Operator",
@@ -694,7 +717,10 @@ const INITIAL_CATALOG_OPERATORS: CatalogOperator[] = [
     supportLifecycle: {
       fullSupportEndDate: "2028-01-15",
       maintenanceEndDate: "2029-01-15",
-      eolEndDate: "2029-01-15",
+      eus1EndDate: "2030-01-15",
+      eus2EndDate: "2031-01-15",
+      eus3EndDate: "2032-01-15",
+      eolEndDate: "2032-06-15",
     },
     updateAvailable: "1.76.0",
     maxOcpVersion: "5.1",
@@ -738,6 +764,7 @@ const INITIAL_CATALOG_OPERATORS: CatalogOperator[] = [
     managedNamespaces: ["observability-sample"],
     isOlmV1Extension: true,
   },
+  ...ADDITIONAL_CATALOG_OPERATORS,
 ];
 
 type LifecycleTrackSegment = "full" | "maintenance" | "elc" | "eol";
@@ -758,20 +785,23 @@ function supportLifecycleTrackSegment(phase: SupportPhase): LifecycleTrackSegmen
 
 type LifecycleStepperVisual = "success" | "current" | "pending" | "danger";
 
-function lifecycleProgressStepStates(seg: LifecycleTrackSegment): [
-  LifecycleStepperVisual,
-  LifecycleStepperVisual,
-  LifecycleStepperVisual,
-] {
+const LIFECYCLE_STEPPER_STEPS = [
+  { id: "full", title: "Full support" },
+  { id: "maintenance", title: "Maintenance support" },
+  { id: "elc", title: "Extended life cycle" },
+  { id: "eol", title: "End of life" },
+] as const;
+
+function lifecycleProgressStepStates(seg: LifecycleTrackSegment): LifecycleStepperVisual[] {
   switch (seg) {
     case "full":
-      return ["current", "pending", "pending"];
+      return ["current", "pending", "pending", "pending"];
     case "maintenance":
-      return ["success", "current", "pending"];
+      return ["success", "current", "pending", "pending"];
     case "elc":
-      return ["success", "success", "current"];
+      return ["success", "success", "current", "pending"];
     case "eol":
-      return ["success", "success", "danger"];
+      return ["success", "success", "success", "danger"];
   }
 }
 
@@ -817,48 +847,33 @@ function LifecycleProgressStepIcon({ visual }: { visual: LifecycleStepperVisual 
  */
 function SupportLifecycleProgressStepper({ phase }: { phase: SupportPhase }) {
   const seg = supportLifecycleTrackSegment(phase);
-  const [v1, v2, v3] = lifecycleProgressStepStates(seg);
-  const step3Title = v3 === "danger" ? "End of life" : "Extended life cycle";
+  const visuals = lifecycleProgressStepStates(seg);
 
   return (
     <Flex direction={{ default: "column" }} gap={{ default: "gapSm" }} className="ocs-io-lifecycle-stepper-wrap">
-      <ol className="pf-v6-c-progress-stepper ocs-io-lifecycle-stepper" role="list" aria-label="Operator support lifecycle progression">
-        <li
-          className={lifecycleProgressStepClass(v1)}
-          role="listitem"
-          aria-label={lifecycleProgressStepAriaLabel(v1, "Full support")}
-        >
-          <div className="pf-v6-c-progress-stepper__step-connector">
-            <LifecycleProgressStepIcon visual={v1} />
-          </div>
-          <div className="pf-v6-c-progress-stepper__step-main">
-            <div className="pf-v6-c-progress-stepper__step-title">Full support</div>
-          </div>
-        </li>
-        <li
-          className={lifecycleProgressStepClass(v2)}
-          role="listitem"
-          aria-label={lifecycleProgressStepAriaLabel(v2, "Maintenance support")}
-        >
-          <div className="pf-v6-c-progress-stepper__step-connector">
-            <LifecycleProgressStepIcon visual={v2} />
-          </div>
-          <div className="pf-v6-c-progress-stepper__step-main">
-            <div className="pf-v6-c-progress-stepper__step-title">Maintenance support</div>
-          </div>
-        </li>
-        <li
-          className={lifecycleProgressStepClass(v3)}
-          role="listitem"
-          aria-label={lifecycleProgressStepAriaLabel(v3, step3Title)}
-        >
-          <div className="pf-v6-c-progress-stepper__step-connector">
-            <LifecycleProgressStepIcon visual={v3} />
-          </div>
-          <div className="pf-v6-c-progress-stepper__step-main">
-            <div className="pf-v6-c-progress-stepper__step-title">{step3Title}</div>
-          </div>
-        </li>
+      <ol
+        className="pf-v6-c-progress-stepper pf-m-horizontal pf-m-center ocs-io-lifecycle-stepper"
+        role="list"
+        aria-label="Operator support lifecycle progression"
+      >
+        {LIFECYCLE_STEPPER_STEPS.map((step, index) => {
+          const visual = visuals[index];
+          return (
+            <li
+              key={step.id}
+              className={lifecycleProgressStepClass(visual)}
+              role="listitem"
+              aria-label={lifecycleProgressStepAriaLabel(visual, step.title)}
+            >
+              <div className="pf-v6-c-progress-stepper__step-connector">
+                <LifecycleProgressStepIcon visual={visual} />
+              </div>
+              <div className="pf-v6-c-progress-stepper__step-main">
+                <div className="pf-v6-c-progress-stepper__step-title">{step.title}</div>
+              </div>
+            </li>
+          );
+        })}
       </ol>
       {seg === "eol" ? (
         <Content component="p" className="ocs-io-lifecycle-stepper__eol-note pf-v6-u-font-size-sm pf-v6-u-mb-0">
@@ -1039,8 +1054,21 @@ function SupportPhaseSkuPopoverNote() {
   );
 }
 
-function SupportLifecyclePopoverContents({ op }: { op: OperatorRow }) {
-  const entries = getSupportLifecycleDateEntries(op);
+function SupportLifecyclePopoverContents({
+  op,
+  showElcMilestones,
+  onElcMilestonesChange,
+}: {
+  op: OperatorRow;
+  showElcMilestones: boolean;
+  onElcMilestonesChange: (show: boolean) => void;
+}) {
+  const allEntries = getSupportLifecycleDateEntries(op);
+  const eusEntries = allEntries.filter((row) => row.term.includes("EUS"));
+  const baseEntries = allEntries.filter((row) => !row.term.includes("EUS"));
+  const entries = showElcMilestones ? allEntries : baseEntries;
+  const hasPublishedEusMilestones = eusEntries.length > 0;
+  const hiddenEusCount = eusEntries.length;
 
   if (op.isUnsupported) {
     return (
@@ -1073,9 +1101,49 @@ function SupportLifecyclePopoverContents({ op }: { op: OperatorRow }) {
     <>
       <SupportLifecycleProgressStepper phase={getDerivedSupportPhase(op)} />
       <Content component="p" className="pf-v6-u-font-size-sm pf-v6-u-mb-md">
-        Extended life cycle groups published <strong>EUS</strong> milestones (EUS ends, EUS Term 2/3 ends) from the
-        operator policy tables.
+        {showElcMilestones ? (
+          <>
+            Extended life cycle groups published <strong>EUS</strong> milestones (EUS ends, EUS Term 2/3 ends) from the
+            operator policy tables.{" "}
+            {hasPublishedEusMilestones ? (
+              <Button
+                variant="link"
+                isInline
+                type="button"
+                onClick={() => onElcMilestonesChange(false)}
+                aria-pressed={showElcMilestones}
+              >
+                Hide ELC milestones.
+              </Button>
+            ) : null}
+          </>
+        ) : hiddenEusCount > 0 ? (
+          <>
+            <strong>{hiddenEusCount}</strong> published <strong>EUS / extended life cycle</strong> milestone
+            {hiddenEusCount === 1 ? " is" : "s are"} hidden.{" "}
+            <Button
+              variant="link"
+              isInline
+              type="button"
+              onClick={() => onElcMilestonesChange(true)}
+              aria-pressed={showElcMilestones}
+            >
+              Show ELC milestones.
+            </Button>
+          </>
+        ) : (
+          <>
+            This operator has no separate <strong>EUS</strong> milestones in the policy table; full support,
+            maintenance, and end-of-life dates still apply.
+          </>
+        )}
       </Content>
+      {showElcMilestones && !hasPublishedEusMilestones && baseEntries.length > 0 ? (
+        <Content component="p" className="pf-v6-u-font-size-sm pf-v6-u-mb-md pf-v6-u-color-200">
+          No separate <strong>EUS</strong> or extended life cycle milestone rows are present in the prototype PLCC
+          payload for this operator version. Full support, maintenance, and end-of-life boundaries still apply.
+        </Content>
+      ) : null}
       {entries.length > 0 ? (
         <DescriptionList isCompact isHorizontal termWidth="12rem">
           {entries.map((row) => (
@@ -1113,7 +1181,15 @@ function OlmV1ExtensionSupportPopoverContents() {
 /**
  * Support phase: plain phase label with an info icon that opens full lifecycle dates (no colored badges).
  */
-function InstalledOperatorSupportPhaseCell({ op }: { op: OperatorRow }) {
+function InstalledOperatorSupportPhaseCell({
+  op,
+  showElcMilestones,
+  onElcMilestonesChange,
+}: {
+  op: OperatorRow;
+  showElcMilestones: boolean;
+  onElcMilestonesChange: (show: boolean) => void;
+}) {
   const phaseLabel = op.isOlmV1Extension ? "—" : getDerivedSupportPhase(op);
   const popoverAriaLabel = op.isOlmV1Extension
     ? "Support phase and OLM v1 extensions"
@@ -1121,7 +1197,11 @@ function InstalledOperatorSupportPhaseCell({ op }: { op: OperatorRow }) {
   const bodyContent = op.isOlmV1Extension ? (
     <OlmV1ExtensionSupportPopoverContents />
   ) : (
-    <SupportLifecyclePopoverContents op={op} />
+    <SupportLifecyclePopoverContents
+      op={op}
+      showElcMilestones={showElcMilestones}
+      onElcMilestonesChange={onElcMilestonesChange}
+    />
   );
 
   return (
@@ -1133,11 +1213,12 @@ function InstalledOperatorSupportPhaseCell({ op }: { op: OperatorRow }) {
       style={{ minWidth: 0 }}
     >
       <Popover
+        key={`${op.name}-lifecycle`}
         aria-label={popoverAriaLabel}
         headerContent={<Title headingLevel="h6">Operator lifecycle</Title>}
         bodyContent={bodyContent}
         position="auto"
-        maxWidth="min(28rem, 92vw)"
+        maxWidth="min(36rem, 96vw)"
         appendTo={() => document.body}
       >
         <Button
@@ -1208,6 +1289,8 @@ export default function InstalledOperatorsPage() {
   const [columnModalDraft, setColumnModalDraft] = useState<Record<TableColumnKey, boolean>>(
     () => ({ ...RESTORE_DEFAULT_VISIBLE })
   );
+  /** Interim: customer opt-in to surface EUS / ELC milestone rows in lifecycle popovers (pre sub-cluster entitlement). */
+  const [showElcMilestones, setShowElcMilestones] = useState(false);
   const navigate = useNavigate();
   const { demoVariant } = useClusterUpdateDemoVariant();
   const { setCurrentPage } = useChat();
@@ -1636,6 +1719,51 @@ export default function InstalledOperatorsPage() {
                             Browse Software Catalog
                           </Button>
                         </ToolbarItem>
+                        {showOlmV0ListColumns ? (
+                          <ToolbarItem>
+                            <Flex
+                              direction={{ default: "row" }}
+                              gap={{ default: "gapSm" }}
+                              alignItems={{ default: "alignItemsCenter" }}
+                              flexWrap={{ default: "nowrap" }}
+                            >
+                              <Switch
+                                id="installed-operators-elc-opt-in"
+                                label="Include ELC milestones"
+                                isChecked={showElcMilestones}
+                                onChange={(_event, checked) => setShowElcMilestones(checked)}
+                              />
+                              <Popover
+                                aria-label="About including ELC milestones"
+                                headerContent={<Title headingLevel="h6">ELC milestones opt-in</Title>}
+                                bodyContent={
+                                  <Content component="div" className="pf-v6-u-font-size-sm">
+                                    <p className="pf-v6-u-mb-md">
+                                      Opt in to show published <strong>EUS</strong> and extended life cycle milestone
+                                      dates in operator lifecycle details. EUS alignment follows{" "}
+                                      <strong>PLCC</strong> as the source of truth; not all operators are EUS-aligned
+                                      (for example standalone layered products may differ from the cluster).
+                                    </p>
+                                    <p className="pf-v6-u-mb-0">
+                                      Fuller behavior is expected to depend on sub-cluster entitlement checking.
+                                    </p>
+                                  </Content>
+                                }
+                                position="bottom"
+                                maxWidth="min(22rem, 92vw)"
+                                appendTo={() => document.body}
+                              >
+                                <Button
+                                  variant="plain"
+                                  type="button"
+                                  aria-label="About including ELC milestones"
+                                  hasNoPadding
+                                  icon={<Info aria-hidden />}
+                                />
+                              </Popover>
+                            </Flex>
+                          </ToolbarItem>
+                        ) : null}
                       </ToolbarGroup>
                     }
                   >
@@ -1868,7 +1996,11 @@ export default function InstalledOperatorsPage() {
                           )}
                           {showOlmV0ListColumns && visibleColumns.support && (
                             <Td dataLabel="Support phase">
-                              <InstalledOperatorSupportPhaseCell op={op} />
+                              <InstalledOperatorSupportPhaseCell
+                                op={op}
+                                showElcMilestones={showElcMilestones}
+                                onElcMilestonesChange={setShowElcMilestones}
+                              />
                             </Td>
                           )}
                           {showOlmV0ListColumns && visibleColumns.supportPhaseEnd && (

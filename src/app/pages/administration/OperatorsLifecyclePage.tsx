@@ -1,11 +1,14 @@
 import { AlertCircle, CheckCircle, Clock, Info, MoreVertical } from "@/lib/pfIcons";
 import { useState } from "react";
 import { useNavigate } from "react-router";
+import { Content, Switch } from "@patternfly/react-core";
 import Breadcrumbs from "../../components/Breadcrumbs";
 
 export default function OperatorsLifecyclePage() {
   const navigate = useNavigate();
   const [openKebabIndex, setOpenKebabIndex] = useState<number | null>(null);
+  /** Interim UX: customer opt-in to surface ELC milestones until sub-cluster entitlement (e.g. OCPSTRAT-2957). */
+  const [showElcMilestones, setShowElcMilestones] = useState(false);
 
   const handleTabClick = (tab: string) => {
     if (tab === 'plan') {
@@ -163,6 +166,29 @@ export default function OperatorsLifecyclePage() {
           </div>
         </div>
 
+        {/* Customer opt-in: ELC milestones (interim until sub-cluster entitlement / PLCC-backed EUS alignment). */}
+        <div className="bg-[rgba(255,255,255,0.5)] dark:bg-[rgba(255,255,255,0.05)] rounded-[16px] shadow-[0px_4px_12px_0px_rgba(0,0,0,0.06)] p-[20px] mb-[24px] border border-[rgba(0,0,0,0.1)] dark:border-[rgba(255,255,255,0.1)]">
+          <div className="flex flex-col gap-[12px] sm:flex-row sm:items-start sm:justify-between">
+            <div className="min-w-0 flex-1">
+              <Switch
+                id="cluster-operators-elc-opt-in"
+                label="Include extended life cycle (ELC) milestones"
+                isChecked={showElcMilestones}
+                onChange={(_event, checked) => setShowElcMilestones(checked)}
+              />
+              <Content
+                component="p"
+                className="pf-v6-u-font-size-sm pf-v6-u-mt-sm pf-v6-u-mb-0 text-[#4d4d4d] dark:text-[#b0b0b0] max-w-3xl [&_*]:text-inherit"
+              >
+                Opt in to show published ELC / EUS-related dates in this view. EUS alignment is indicated by{" "}
+                <strong className="text-[#151515] dark:text-white">PLCC</strong> as the source of truth; not all
+                operators are EUS-aligned (for example standalone layered products may differ from the cluster). Fuller
+                behavior is expected to depend on sub-cluster entitlement checking.
+              </Content>
+            </div>
+          </div>
+        </div>
+
         {/* Alert for EOL Operators */}
         {summary.endOfLife > 0 && (
           <div className="bg-[#fef6f5] dark:bg-[rgba(201,25,11,0.1)] border border-[#c9190b] dark:border-[#ee0000] rounded-[12px] p-[16px] mb-[24px]">
@@ -215,6 +241,11 @@ export default function OperatorsLifecyclePage() {
                   <th className="text-left py-[16px] px-[12px] font-['Red_Hat_Display:SemiBold',sans-serif] font-semibold text-[#151515] dark:text-white text-[13px]">
                     Time Remaining
                   </th>
+                  {showElcMilestones ? (
+                    <th className="text-left py-[16px] px-[12px] font-['Red_Hat_Display:SemiBold',sans-serif] font-semibold text-[#151515] dark:text-white text-[13px]">
+                      EUS / ELC
+                    </th>
+                  ) : null}
                   <th className="text-left py-[16px] px-[12px] font-['Red_Hat_Display:SemiBold',sans-serif] font-semibold text-[#151515] dark:text-white text-[13px]">
                     Platform Compatibility
                   </th>
@@ -266,6 +297,14 @@ export default function OperatorsLifecyclePage() {
                         Full: {op.fullSupportEnd}
                       </p>
                     </td>
+                    {showElcMilestones ? (
+                      <td className="py-[16px] px-[12px] text-[14px] text-[#4d4d4d] dark:text-[#b0b0b0]">
+                        <p className="font-['Red_Hat_Text:Medium',sans-serif] font-medium text-[#151515] dark:text-white">
+                          {op.eusEnd}
+                        </p>
+                        <p className="text-[12px] text-[#4d4d4d] dark:text-[#b0b0b0]">Maint.: {op.maintenanceEnd}</p>
+                      </td>
+                    ) : null}
                     <td className="py-[16px] px-[12px] text-[14px] text-[#4d4d4d] dark:text-[#b0b0b0]">
                       {op.platformCompatibility}
                     </td>
