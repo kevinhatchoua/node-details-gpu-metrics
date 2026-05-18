@@ -74,6 +74,7 @@ export const ADDITIONAL_CATALOG_OPERATORS: CatalogOperator[] = [
     source: "Built-in",
     status: "Running",
     autoUpdate: true,
+    isPlatformAligned: true,
     clusterCompatibility: "Compatible",
     supportLifecycle: {
       fullSupportEndDate: "2025-08-01",
@@ -94,6 +95,7 @@ export const ADDITIONAL_CATALOG_OPERATORS: CatalogOperator[] = [
     source: "redhat-operators",
     status: "Running",
     autoUpdate: true,
+    isHpbuOwned: false,
     clusterCompatibility: "Compatible",
     supportLifecycle: {
       fullSupportEndDate: "2025-06-01",
@@ -193,6 +195,7 @@ export const ADDITIONAL_CATALOG_OPERATORS: CatalogOperator[] = [
     source: "community-operators",
     status: "Running",
     autoUpdate: true,
+    isHpbuOwned: false,
     clusterCompatibility: "Compatible",
     supportLifecycle: {
       fullSupportEndDate: "2025-11-01",
@@ -233,6 +236,7 @@ export const ADDITIONAL_CATALOG_OPERATORS: CatalogOperator[] = [
     source: "community-operators",
     status: "Degraded",
     autoUpdate: false,
+    isHpbuOwned: false,
     clusterCompatibility: "Compatible",
     supportLifecycle: {
       fullSupportEndDate: "2026-03-01",
@@ -274,6 +278,7 @@ export const ADDITIONAL_CATALOG_OPERATORS: CatalogOperator[] = [
     source: "redhat-operators",
     status: "Running",
     autoUpdate: true,
+    isPlatformAligned: true,
     clusterCompatibility: "Compatible",
     supportLifecycle: {
       fullSupportEndDate: "2026-01-01",

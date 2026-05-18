@@ -1215,6 +1215,20 @@ html.dark .ocs-io-operator-table .ocs-operator-table-sort.pf-v6-c-button.pf-m-pl
 }
 
 /* Date label on data table: keep outline label text readable on primary/dark row backgrounds. */
+.ocs-io-subscription-entitlement-toolbar-item {
+  flex-shrink: 0;
+}
+
+.ocs-io-filters-mid__group .ocs-io-subscription-entitlement-toolbar-item {
+  margin-inline-start: var(--pf-t--global--spacer--sm, 0.5rem);
+}
+
+.ocs-io-platform-alignment-warning {
+  display: inline-flex;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
 .ocs-io-operator-table .ocs-io-phase-end-date-label.pf-v6-c-label {
   --pf-v6-c-label--Color: var(--pf-t--global--text--color--regular);
 }

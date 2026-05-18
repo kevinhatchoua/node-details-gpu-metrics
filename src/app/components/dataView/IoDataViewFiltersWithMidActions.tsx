@@ -51,6 +51,7 @@ function flattenFilterChildren(children: ReactNode): ReactElement[] {
  */
 export function IoDataViewFiltersWithMidActions<T extends Record<string, unknown>>({
   children,
+  afterFiltersContent,
   midContent,
   ouiaId = "IoDataViewFiltersWithMidActions",
   toggleIcon = <FilterIcon />,
@@ -60,6 +61,8 @@ export function IoDataViewFiltersWithMidActions<T extends Record<string, unknown
   ...rest
 }: {
   children: ReactNode;
+  /** Rendered immediately after the active filter control (e.g. subscription selector beside search). */
+  afterFiltersContent?: ReactNode;
   /** Rendered after the attribute menu + active filter value control (e.g. toolbar actions). */
   midContent: ReactNode;
   values: T;
@@ -199,6 +202,7 @@ export function IoDataViewFiltersWithMidActions<T extends Record<string, unknown
           }
           return child;
         })}
+        {afterFiltersContent}
         {midContent}
       </ToolbarGroup>
     </ToolbarToggleGroup>

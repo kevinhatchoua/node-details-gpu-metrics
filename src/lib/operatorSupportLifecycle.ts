@@ -285,3 +285,243 @@ export function getSupportLifecycleDateEntries(op: {
   }
   return rows;
 }
+
+/** Console 5.0 interim: customer-selected subscription tier (SKU-blind until OCPSTRAT-2957). */
+export type SubscriptionEntitlementContext = "standard" | "premium-eus-term1" | "premium-extended-eus";
+
+export const SUBSCRIPTION_ENTITLEMENT_OPTIONS: {
+  value: SubscriptionEntitlementContext;
+  label: string;
+}[] = [
+  { value: "standard", label: "Standard Subscription" },
+  { value: "premium-eus-term1", label: "Premium Subscription (Includes EUS Term 1)" },
+  { value: "premium-extended-eus", label: "Premium + Extended EUS (Includes Term 2/ Term 3)" },
+];
+
+export const LIFECYCLE_PUBLIC_SCHEDULE_DISCLAIMER =
+  "Lifecycle dates (Support phase, End date) are based on PUBLIC product schedules and MAY NOT reflect your specific support entitlements. Always verify your account's exact SKU.";
+
+export const PLATFORM_ALIGNED_EUS_MISMATCH_DISCLAIMER =
+  "Operator EUS date mismatches current cluster alignment date. Verify alignment status.";
+
+/** Cluster OCP version line dates for platform-aligned operator comparison (prototype). */
+export type ClusterOcpLifecycleDates = {
+  ocpVersionLabel: string;
+  fullSupportEndDate: string;
+  maintenanceEndDate: string;
+  eus1EndDate?: string;
+  eus2EndDate?: string;
+  eus3EndDate?: string;
+  eolEndDate?: string;
+};
+
+export function clusterLifecycleToOperatorLifecycle(
+  cluster: ClusterOcpLifecycleDates
+): OperatorSupportLifecycle {
+  return {
+    fullSupportEndDate: cluster.fullSupportEndDate,
+    maintenanceEndDate: cluster.maintenanceEndDate,
+    eus1EndDate: cluster.eus1EndDate,
+    eus2EndDate: cluster.eus2EndDate,
+    eus3EndDate: cluster.eus3EndDate,
+    eolEndDate: cluster.eolEndDate ?? cluster.eus3EndDate ?? cluster.maintenanceEndDate,
+  };
+}
+
+export type OperatorLifecycleEntitlementRow = {
+  supportLifecycle?: OperatorSupportLifecycle;
+  isUnsupported?: boolean;
+  /** When false, row uses published operator dates only (Ansible, RHOAI, community, etc.). */
+  isHpbuOwned?: boolean;
+  isPlatformAligned?: boolean;
+};
+
+/** HPBU-owned operators follow the page entitlement control; others always use published operator dates. */
+export function operatorResolvesEntitlementContext(op: OperatorLifecycleEntitlementRow): boolean {
+  if (op.isUnsupported) return false;
+  return op.isHpbuOwned !== false;
+}
+
+export function hasPlatformAlignedEusMismatch(
+  op: OperatorLifecycleEntitlementRow,
+  cluster: ClusterOcpLifecycleDates
+): boolean {
+  if (!op.isPlatformAligned || !op.supportLifecycle?.eus1EndDate || !cluster.eus1EndDate) {
+    return false;
+  }
+  const opMs = parseSupportEndDateMs(op.supportLifecycle.eus1EndDate);
+  const clusterMs = parseSupportEndDateMs(cluster.eus1EndDate);
+  if (opMs === undefined || clusterMs === undefined) return false;
+  return opMs !== clusterMs;
+}
+
+/** Lifecycle payload used for phase / urgency when aligned with cluster (no EUS mismatch). */
+export function getLifecycleEvaluationRow<T extends OperatorLifecycleEntitlementRow>(
+  op: T,
+  cluster: ClusterOcpLifecycleDates
+): T {
+  if (op.isPlatformAligned && !hasPlatformAlignedEusMismatch(op, cluster)) {
+    return { ...op, supportLifecycle: clusterLifecycleToOperatorLifecycle(cluster) };
+  }
+  return op;
+}
+
+export function getEntitlementAwareSupportPhase(
+  op: OperatorLifecycleEntitlementRow,
+  entitlement: SubscriptionEntitlementContext,
+  nowMs: number = Date.now()
+): SupportPhase {
+  if (!operatorResolvesEntitlementContext(op)) {
+    return getDerivedSupportPhase(op, nowMs);
+  }
+  if (entitlement === "premium-extended-eus") {
+    return getDerivedSupportPhase(op, nowMs);
+  }
+
+  const L = op.supportLifecycle;
+  if (!L) return "Unsupported";
+
+  const full = parseSupportEndDateMs(L.fullSupportEndDate);
+  const maint = parseSupportEndDateMs(L.maintenanceEndDate);
+  const e1 = parseSupportEndDateMs(L.eus1EndDate);
+
+  if (entitlement === "standard") {
+    if (full !== undefined && nowMs < full) return "Full support";
+    if (maint !== undefined && nowMs < maint) return "Maintenance support";
+    return "End of life";
+  }
+
+  if (e1 === undefined) {
+    if (full !== undefined && nowMs < full) return "Full support";
+    if (maint !== undefined && nowMs < maint) return "Maintenance support";
+    return "End of life";
+  }
+
+  const eol = parseSupportEndDateMs(L.eolEndDate ?? L.maintenanceEndDate);
+  if (eol !== undefined && nowMs >= eol) return "End of life";
+  if (full !== undefined && nowMs < full) return "Full support";
+  if (maint !== undefined && nowMs < maint) return "Maintenance support";
+  if (nowMs < e1) return "EUS";
+  return "End of life";
+}
+
+export function getEntitlementAwarePhaseEndDateRaw(
+  op: OperatorLifecycleEntitlementRow,
+  entitlement: SubscriptionEntitlementContext,
+  nowMs: number = Date.now()
+): string | undefined {
+  if (!operatorResolvesEntitlementContext(op)) {
+    return getCurrentPhaseEndDateRaw(op, nowMs);
+  }
+
+  const phase = getEntitlementAwareSupportPhase(op, entitlement, nowMs);
+  const L = op.supportLifecycle;
+  if (!L) return undefined;
+
+  switch (phase) {
+    case "Full support":
+      return L.fullSupportEndDate;
+    case "Maintenance support":
+      return L.maintenanceEndDate;
+    case "EUS":
+      return L.eus1EndDate;
+    case "EUS Term 2":
+      return L.eus2EndDate;
+    case "EUS Term 3":
+      return L.eus3EndDate;
+    case "End of life":
+      if (entitlement === "standard") return L.maintenanceEndDate;
+      if (entitlement === "premium-eus-term1") return L.eus1EndDate ?? L.maintenanceEndDate;
+      return L.eolEndDate ?? L.maintenanceEndDate;
+    case "Unsupported":
+    default:
+      return undefined;
+  }
+}
+
+export function getEntitlementAwareDaysUntilPhaseEnd(
+  op: OperatorLifecycleEntitlementRow,
+  entitlement: SubscriptionEntitlementContext,
+  nowMs: number = Date.now()
+): number | undefined {
+  const raw = getEntitlementAwarePhaseEndDateRaw(op, entitlement, nowMs);
+  if (!raw) return undefined;
+  const end = parseSupportEndDateMs(raw);
+  if (end === undefined) return undefined;
+  return Math.floor((end - nowMs) / MS_PER_DAY);
+}
+
+export function getEntitlementAwarePhaseDateLabelUrgency(
+  op: OperatorLifecycleEntitlementRow,
+  entitlement: SubscriptionEntitlementContext,
+  nowMs: number = Date.now()
+): PhaseDateLabelUrgency {
+  if (!operatorResolvesEntitlementContext(op)) {
+    return getCurrentPhaseDateLabelUrgency(op, nowMs);
+  }
+
+  const phase = getEntitlementAwareSupportPhase(op, entitlement, nowMs);
+  if (phase === "End of life" || phase === "Unsupported") return "danger";
+  if (phase === "Full support") return "success";
+
+  const days = getEntitlementAwareDaysUntilPhaseEnd(op, entitlement, nowMs);
+  const inWindow =
+    phase === "Maintenance support" ||
+    (entitlement !== "standard" && isExtendedLifeCyclePhase(phase));
+  if (inWindow && days !== undefined && days <= OPERATOR_PHASE_END_WARNING_DAYS && days >= 0) {
+    return "warning";
+  }
+  return "default";
+}
+
+export function getEntitlementAwarePhaseEndSortTimestamp(
+  op: OperatorLifecycleEntitlementRow & { isOlmV1Extension?: boolean },
+  entitlement: SubscriptionEntitlementContext
+): number {
+  if (op.isOlmV1Extension) return Number.MAX_SAFE_INTEGER - 1;
+  const raw = getEntitlementAwarePhaseEndDateRaw(op, entitlement);
+  const ms = raw ? parseSupportEndDateMs(raw) : undefined;
+  return ms ?? Number.MAX_SAFE_INTEGER;
+}
+
+export function getEntitlementAwareSupportPhaseSortRank(
+  op: OperatorLifecycleEntitlementRow & { isOlmV1Extension?: boolean },
+  entitlement: SubscriptionEntitlementContext
+): number {
+  if (op.isOlmV1Extension) return 99;
+  return SUPPORT_PHASE_SORT_RANK[getEntitlementAwareSupportPhase(op, entitlement)];
+}
+
+/** Milestone list for lifecycle popover — filtered by entitlement (no hidden EUS rows). */
+export function getEntitlementAwareLifecycleDateEntries(
+  op: OperatorLifecycleEntitlementRow,
+  entitlement: SubscriptionEntitlementContext
+): { term: string; description: string }[] {
+  const all = getSupportLifecycleDateEntries(op);
+  if (!operatorResolvesEntitlementContext(op)) return all;
+  if (entitlement === "premium-extended-eus") return all;
+  if (entitlement === "standard") return all.filter((row) => !row.term.includes("EUS"));
+  return all.filter((row) => !row.term.includes("EUS Term 2") && !row.term.includes("EUS Term 3"));
+}
+
+/** Progress stepper segment from entitlement-aware phase (not calendar-only). */
+export function getEntitlementAwareLifecycleTrackSegment(
+  phase: SupportPhase,
+  entitlement: SubscriptionEntitlementContext
+): "full" | "maintenance" | "elc" | "eol" {
+  if (entitlement === "premium-extended-eus") {
+    if (phase === "End of life" || phase === "Unsupported") return "eol";
+    if (phase === "Full support") return "full";
+    if (phase === "Maintenance support") return "maintenance";
+    return "elc";
+  }
+  if (entitlement === "premium-eus-term1") {
+    if (phase === "EUS") return "elc";
+    if (phase === "Full support") return "full";
+    if (phase === "Maintenance support") return "maintenance";
+    return "eol";
+  }
+  if (phase === "Full support") return "full";
+  if (phase === "Maintenance support") return "maintenance";
+  return "eol";
+}

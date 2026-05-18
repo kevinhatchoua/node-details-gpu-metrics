@@ -19,6 +19,7 @@ import ExclamationTriangleIcon from "@patternfly/react-icons/dist/esm/icons/excl
 import { usePatternFlyGlassActive } from "@/lib/usePatternFlyGlassActive";
 import { Link, useNavigate } from "react-router";
 import {
+  Alert,
   Button,
   Card,
   CardBody,
@@ -33,6 +34,8 @@ import {
   DropdownItem,
   Flex,
   FlexItem,
+  FormSelect,
+  FormSelectOption,
   Icon,
   Label,
   MenuToggle,
@@ -51,7 +54,6 @@ import {
   Tooltip,
   ToolbarGroup,
   ToolbarItem,
-  Switch,
 } from "@patternfly/react-core";
 import {
   DataView,
@@ -78,20 +80,45 @@ import { IoDataViewFiltersWithMidActions } from "../../components/dataView/IoDat
 import { ADDITIONAL_CATALOG_OPERATORS } from "./installedOperatorsFixtureData";
 import {
   formatLifecycleDateShort,
-  getCurrentPhaseDateLabelUrgency,
-  getCurrentPhaseEndDateRaw,
-  getCurrentPhaseEndSortTimestamp,
-  getDaysUntilCurrentPhaseEnd,
   getDerivedSupportPhase,
-  getSupportLifecycleDateEntries,
-  getSupportPhaseSortRank,
+  getEntitlementAwareDaysUntilPhaseEnd,
+  getEntitlementAwareLifecycleDateEntries,
+  getEntitlementAwareLifecycleTrackSegment,
+  getEntitlementAwarePhaseDateLabelUrgency,
+  getEntitlementAwarePhaseEndDateRaw,
+  getEntitlementAwarePhaseEndSortTimestamp,
+  getEntitlementAwareSupportPhase,
+  getEntitlementAwareSupportPhaseSortRank,
+  getLifecycleEvaluationRow,
+  hasPlatformAlignedEusMismatch,
+  LIFECYCLE_PUBLIC_SCHEDULE_DISCLAIMER,
+  PLATFORM_ALIGNED_EUS_MISMATCH_DISCLAIMER,
   RH_OPERATOR_LC_DOC_URL,
+  SUBSCRIPTION_ENTITLEMENT_OPTIONS,
+  type ClusterOcpLifecycleDates,
   type OperatorSupportLifecycle,
   type PhaseDateLabelUrgency,
+  type SubscriptionEntitlementContext,
   type SupportPhase,
 } from "@/lib/operatorSupportLifecycle";
 
-export type { OperatorSupportLifecycle, PhaseDateLabelUrgency, SupportPhase } from "@/lib/operatorSupportLifecycle";
+export type {
+  OperatorSupportLifecycle,
+  PhaseDateLabelUrgency,
+  SubscriptionEntitlementContext,
+  SupportPhase,
+} from "@/lib/operatorSupportLifecycle";
+
+/** Prototype cluster (OCP 5.0) published boundaries for platform-aligned operators. */
+const PROTOTYPE_CLUSTER_OCP_LIFECYCLE: ClusterOcpLifecycleDates = {
+  ocpVersionLabel: "5.0",
+  fullSupportEndDate: "2026-05-03",
+  maintenanceEndDate: "2027-04-21",
+  eus1EndDate: "2027-10-21",
+  eus2EndDate: "2028-04-21",
+  eus3EndDate: "2028-10-21",
+  eolEndDate: "2029-04-21",
+};
 
 const CLUSTER_TARGET_VERSION = "5.1.10";
 const CLUSTER_CHANNEL = "fast-5.1";
@@ -318,6 +345,10 @@ type InstalledOperator = {
   compatibilityMessage?: string;
   /** Policy dates and optional EUS; see Red Hat OpenShift Operator life cycles. */
   supportLifecycle?: OperatorSupportLifecycle;
+  /** HPBU catalog operators follow page entitlement; false for layered/third-party (Ansible, RHOAI, etc.). */
+  isHpbuOwned?: boolean;
+  /** Operator lifecycle is tied to cluster OCP version line (see cluster lifecycle constants). */
+  isPlatformAligned?: boolean;
   /** Community / non-entitled installs — not covered by Red Hat support for this row. */
   isUnsupported?: boolean;
   updateAvailable?: string;
@@ -378,7 +409,12 @@ type OperatorRow = CatalogOperator & {
   clusterCompatibility: "Compatible" | "Incompatible";
 };
 
-function rowMatchesDataViewFilters(op: OperatorRow, f: IoListFilters): boolean {
+function rowMatchesDataViewFilters(
+  op: OperatorRow,
+  f: IoListFilters,
+  entitlement: SubscriptionEntitlementContext
+): boolean {
+  const lifecycleOp = getLifecycleEvaluationRow(op, PROTOTYPE_CLUSTER_OCP_LIFECYCLE);
   if (f.name.trim()) {
     const q = f.name.trim().toLowerCase();
     if (!op.name.toLowerCase().includes(q) && !op.namespace.toLowerCase().includes(q)) return false;
@@ -394,12 +430,12 @@ function rowMatchesDataViewFilters(op: OperatorRow, f: IoListFilters): boolean {
   }
   if (f.support.length > 0) {
     if (op.isOlmV1Extension) return false;
-    if (!f.support.includes(getDerivedSupportPhase(op))) return false;
+    if (!f.support.includes(getEntitlementAwareSupportPhase(lifecycleOp, entitlement))) return false;
   }
   if (f.supportPhaseEnd.trim()) {
     if (op.isOlmV1Extension) return false;
     const q = f.supportPhaseEnd.trim().toLowerCase();
-    const raw = getCurrentPhaseEndDateRaw(op);
+    const raw = getEntitlementAwarePhaseEndDateRaw(lifecycleOp, entitlement);
     const formatted = formatLifecycleDateShort(raw).toLowerCase();
     const rawStr = (raw ?? "").toLowerCase();
     if (!formatted.includes(q) && !rawStr.includes(q)) return false;
@@ -418,9 +454,16 @@ function rowMatchesDataViewFilters(op: OperatorRow, f: IoListFilters): boolean {
   return true;
 }
 
-function sortOperatorRows(rows: OperatorRow[], key: SortColumnKey, dir: "asc" | "desc"): OperatorRow[] {
+function sortOperatorRows(
+  rows: OperatorRow[],
+  key: SortColumnKey,
+  dir: "asc" | "desc",
+  entitlement: SubscriptionEntitlementContext
+): OperatorRow[] {
   const m = dir === "asc" ? 1 : -1;
   return [...rows].sort((a, b) => {
+    const lifecycleA = getLifecycleEvaluationRow(a, PROTOTYPE_CLUSTER_OCP_LIFECYCLE);
+    const lifecycleB = getLifecycleEvaluationRow(b, PROTOTYPE_CLUSTER_OCP_LIFECYCLE);
     let cmp = 0;
     switch (key) {
       case "name":
@@ -454,8 +497,14 @@ function sortOperatorRows(rows: OperatorRow[], key: SortColumnKey, dir: "asc" | 
         }
         if (ta === 1) cmp = 0;
         else {
-          cmp = getSupportPhaseSortRank(a) - getSupportPhaseSortRank(b);
-          if (cmp === 0) cmp = getCurrentPhaseEndSortTimestamp(a) - getCurrentPhaseEndSortTimestamp(b);
+          cmp =
+            getEntitlementAwareSupportPhaseSortRank(lifecycleA, entitlement) -
+            getEntitlementAwareSupportPhaseSortRank(lifecycleB, entitlement);
+          if (cmp === 0) {
+            cmp =
+              getEntitlementAwarePhaseEndSortTimestamp(lifecycleA, entitlement) -
+              getEntitlementAwarePhaseEndSortTimestamp(lifecycleB, entitlement);
+          }
         }
         break;
       }
@@ -467,7 +516,11 @@ function sortOperatorRows(rows: OperatorRow[], key: SortColumnKey, dir: "asc" | 
           break;
         }
         if (ta === 1) cmp = 0;
-        else cmp = getCurrentPhaseEndSortTimestamp(a) - getCurrentPhaseEndSortTimestamp(b);
+        else {
+          cmp =
+            getEntitlementAwarePhaseEndSortTimestamp(lifecycleA, entitlement) -
+            getEntitlementAwarePhaseEndSortTimestamp(lifecycleB, entitlement);
+        }
         break;
       }
       default:
@@ -531,6 +584,7 @@ const INITIAL_CATALOG_OPERATORS: CatalogOperator[] = [
     source: "Built-in",
     status: "Running",
     autoUpdate: true,
+    isPlatformAligned: true,
     clusterCompatibility: "Compatible",
     compatibilityMessage: "IAM configuration may need updating before cluster upgrade.",
     supportLifecycle: {
@@ -553,6 +607,7 @@ const INITIAL_CATALOG_OPERATORS: CatalogOperator[] = [
     source: "Built-in",
     status: "Running",
     autoUpdate: false,
+    isPlatformAligned: true,
     clusterCompatibility: "Incompatible",
     compatibilityMessage: "Incompatible with OCP 5.1. Update to 4.22.0 or higher.",
     supportLifecycle: {
@@ -776,23 +831,40 @@ const PF_PROGRESS_STEPPER_CHECK_ICON = (
   </svg>
 );
 
-function supportLifecycleTrackSegment(phase: SupportPhase): LifecycleTrackSegment {
-  if (phase === "End of life" || phase === "Unsupported") return "eol";
-  if (phase === "Full support") return "full";
-  if (phase === "Maintenance support") return "maintenance";
-  return "elc";
-}
-
 type LifecycleStepperVisual = "success" | "current" | "pending" | "danger";
 
-const LIFECYCLE_STEPPER_STEPS = [
+const LIFECYCLE_STEPPER_STEPS_FULL = [
   { id: "full", title: "Full support" },
   { id: "maintenance", title: "Maintenance support" },
   { id: "elc", title: "Extended life cycle" },
   { id: "eol", title: "End of life" },
 ] as const;
 
-function lifecycleProgressStepStates(seg: LifecycleTrackSegment): LifecycleStepperVisual[] {
+const LIFECYCLE_STEPPER_STEPS_STANDARD = [
+  { id: "full", title: "Full support" },
+  { id: "maintenance", title: "Maintenance support" },
+  { id: "eol", title: "End of life" },
+] as const;
+
+function lifecycleStepperStepsForEntitlement(entitlement: SubscriptionEntitlementContext) {
+  return entitlement === "standard" ? LIFECYCLE_STEPPER_STEPS_STANDARD : LIFECYCLE_STEPPER_STEPS_FULL;
+}
+
+function lifecycleProgressStepStates(
+  seg: LifecycleTrackSegment,
+  stepCount: number
+): LifecycleStepperVisual[] {
+  if (stepCount === 3) {
+    switch (seg) {
+      case "full":
+        return ["current", "pending", "pending"];
+      case "maintenance":
+        return ["success", "current", "pending"];
+      case "elc":
+      case "eol":
+        return ["success", "success", "danger"];
+    }
+  }
   switch (seg) {
     case "full":
       return ["current", "pending", "pending", "pending"];
@@ -845,9 +917,16 @@ function LifecycleProgressStepIcon({ visual }: { visual: LifecycleStepperVisual 
  * Published operator lifecycle buckets (policy tables), as a PatternFly Progress Stepper.
  * @see https://www.patternfly.org/components/progress-stepper
  */
-function SupportLifecycleProgressStepper({ phase }: { phase: SupportPhase }) {
-  const seg = supportLifecycleTrackSegment(phase);
-  const visuals = lifecycleProgressStepStates(seg);
+function SupportLifecycleProgressStepper({
+  phase,
+  entitlement,
+}: {
+  phase: SupportPhase;
+  entitlement: SubscriptionEntitlementContext;
+}) {
+  const seg = getEntitlementAwareLifecycleTrackSegment(phase, entitlement);
+  const steps = lifecycleStepperStepsForEntitlement(entitlement);
+  const visuals = lifecycleProgressStepStates(seg, steps.length);
 
   return (
     <Flex direction={{ default: "column" }} gap={{ default: "gapSm" }} className="ocs-io-lifecycle-stepper-wrap">
@@ -856,7 +935,7 @@ function SupportLifecycleProgressStepper({ phase }: { phase: SupportPhase }) {
         role="list"
         aria-label="Operator support lifecycle progression"
       >
-        {LIFECYCLE_STEPPER_STEPS.map((step, index) => {
+        {steps.map((step, index) => {
           const visual = visuals[index];
           return (
             <li
@@ -884,9 +963,18 @@ function SupportLifecycleProgressStepper({ phase }: { phase: SupportPhase }) {
   );
 }
 
-function PhaseEndDateTooltipBody({ op, urgency }: { op: OperatorRow; urgency: PhaseDateLabelUrgency }) {
-  const phase = getDerivedSupportPhase(op);
-  const days = getDaysUntilCurrentPhaseEnd(op);
+function PhaseEndDateTooltipBody({
+  op,
+  urgency,
+  entitlement,
+}: {
+  op: OperatorRow;
+  urgency: PhaseDateLabelUrgency;
+  entitlement: SubscriptionEntitlementContext;
+}) {
+  const lifecycleOp = getLifecycleEvaluationRow(op, PROTOTYPE_CLUSTER_OCP_LIFECYCLE);
+  const phase = getEntitlementAwareSupportPhase(lifecycleOp, entitlement);
+  const days = getEntitlementAwareDaysUntilPhaseEnd(lifecycleOp, entitlement);
 
   const policyLink = (
     <Button
@@ -1045,30 +1133,31 @@ function phaseDateLabelPfColor(urgency: PhaseDateLabelUrgency): "green" | "orang
   }
 }
 
-/** Shared caveat in lifecycle popovers (SKU / extended support may differ from displayed phase). */
-function SupportPhaseSkuPopoverNote() {
+function LifecyclePublicScheduleBanner({ className }: { className?: string }) {
   return (
-    <Content component="p" className="pf-v6-u-font-size-sm pf-v6-u-mb-md">
-      May not reflect your actual SKU. Check your actual SKU for extended support.
-    </Content>
+    <Alert
+      variant="warning"
+      title="Public lifecycle schedules"
+      className={className}
+      isInline={false}
+      customIcon={<ExclamationTriangleIcon aria-hidden />}
+    >
+      {LIFECYCLE_PUBLIC_SCHEDULE_DISCLAIMER}
+    </Alert>
   );
 }
 
 function SupportLifecyclePopoverContents({
   op,
-  showElcMilestones,
-  onElcMilestonesChange,
+  entitlement,
 }: {
   op: OperatorRow;
-  showElcMilestones: boolean;
-  onElcMilestonesChange: (show: boolean) => void;
+  entitlement: SubscriptionEntitlementContext;
 }) {
-  const allEntries = getSupportLifecycleDateEntries(op);
-  const eusEntries = allEntries.filter((row) => row.term.includes("EUS"));
-  const baseEntries = allEntries.filter((row) => !row.term.includes("EUS"));
-  const entries = showElcMilestones ? allEntries : baseEntries;
-  const hasPublishedEusMilestones = eusEntries.length > 0;
-  const hiddenEusCount = eusEntries.length;
+  const lifecycleOp = getLifecycleEvaluationRow(op, PROTOTYPE_CLUSTER_OCP_LIFECYCLE);
+  const phase = getEntitlementAwareSupportPhase(lifecycleOp, entitlement);
+  const entries = getEntitlementAwareLifecycleDateEntries(lifecycleOp, entitlement);
+  const eusMismatch = hasPlatformAlignedEusMismatch(op, PROTOTYPE_CLUSTER_OCP_LIFECYCLE);
 
   if (op.isUnsupported) {
     return (
@@ -1077,7 +1166,7 @@ function SupportLifecyclePopoverContents({
           This install is not represented as entitled Red Hat support for this prototype row. Confirm your subscription,
           catalog source, and support agreement in your real environment.
         </Content>
-        <SupportPhaseSkuPopoverNote />
+        <LifecyclePublicScheduleBanner className="pf-v6-u-mb-md" />
         <Divider className="pf-v6-u-my-md" />
         <Flex direction={{ default: "column" }} gap={{ default: "gapSm" }}>
           <Button
@@ -1099,51 +1188,20 @@ function SupportLifecyclePopoverContents({
 
   return (
     <>
-      <SupportLifecycleProgressStepper phase={getDerivedSupportPhase(op)} />
-      <Content component="p" className="pf-v6-u-font-size-sm pf-v6-u-mb-md">
-        {showElcMilestones ? (
-          <>
-            Extended life cycle groups published <strong>EUS</strong> milestones (EUS ends, EUS Term 2/3 ends) from the
-            operator policy tables.{" "}
-            {hasPublishedEusMilestones ? (
-              <Button
-                variant="link"
-                isInline
-                type="button"
-                onClick={() => onElcMilestonesChange(false)}
-                aria-pressed={showElcMilestones}
-              >
-                Hide ELC milestones.
-              </Button>
-            ) : null}
-          </>
-        ) : hiddenEusCount > 0 ? (
-          <>
-            <strong>{hiddenEusCount}</strong> published <strong>EUS / extended life cycle</strong> milestone
-            {hiddenEusCount === 1 ? " is" : "s are"} hidden.{" "}
-            <Button
-              variant="link"
-              isInline
-              type="button"
-              onClick={() => onElcMilestonesChange(true)}
-              aria-pressed={showElcMilestones}
-            >
-              Show ELC milestones.
-            </Button>
-          </>
-        ) : (
-          <>
-            This operator has no separate <strong>EUS</strong> milestones in the policy table; full support,
-            maintenance, and end-of-life dates still apply.
-          </>
-        )}
-      </Content>
-      {showElcMilestones && !hasPublishedEusMilestones && baseEntries.length > 0 ? (
-        <Content component="p" className="pf-v6-u-font-size-sm pf-v6-u-mb-md pf-v6-u-color-200">
-          No separate <strong>EUS</strong> or extended life cycle milestone rows are present in the prototype PLCC
-          payload for this operator version. Full support, maintenance, and end-of-life boundaries still apply.
-        </Content>
+      <LifecyclePublicScheduleBanner className="pf-v6-u-mb-md" />
+      {eusMismatch ? (
+        <Alert variant="warning" title="Alignment mismatch" isInline className="pf-v6-u-mb-md">
+          {PLATFORM_ALIGNED_EUS_MISMATCH_DISCLAIMER}
+        </Alert>
       ) : null}
+      <SupportLifecycleProgressStepper phase={phase} entitlement={entitlement} />
+      <Content component="p" className="pf-v6-u-font-size-sm pf-v6-u-mb-md pf-v6-u-color-200">
+        Milestones reflect your selected{" "}
+        <strong>
+          {SUBSCRIPTION_ENTITLEMENT_OPTIONS.find((o) => o.value === entitlement)?.label ?? "subscription context"}
+        </strong>
+        . Extended life cycle (EUS) terms not included in this view are omitted from the list below.
+      </Content>
       {entries.length > 0 ? (
         <DescriptionList isCompact isHorizontal termWidth="12rem">
           {entries.map((row) => (
@@ -1160,7 +1218,18 @@ function SupportLifecyclePopoverContents({
         </Content>
       )}
       <Divider className="pf-v6-u-my-md" />
-      <SupportPhaseSkuPopoverNote />
+      <Button
+        variant="link"
+        isInline
+        icon={<ExternalLink />}
+        iconPosition="right"
+        component="a"
+        target="_blank"
+        rel="noopener noreferrer"
+        href={RH_OPERATOR_LC_DOC_URL}
+      >
+        OpenShift Operator life cycles
+      </Button>
     </>
   );
 }
@@ -1173,7 +1242,7 @@ function OlmV1ExtensionSupportPopoverContents() {
         <strong>OLM v1</strong> cluster extensions use different packaging; use the same policy references and your
         extension version on the portal to confirm dates.
       </Content>
-      <SupportPhaseSkuPopoverNote />
+      <LifecyclePublicScheduleBanner />
     </>
   );
 }
@@ -1183,25 +1252,21 @@ function OlmV1ExtensionSupportPopoverContents() {
  */
 function InstalledOperatorSupportPhaseCell({
   op,
-  showElcMilestones,
-  onElcMilestonesChange,
+  entitlement,
 }: {
   op: OperatorRow;
-  showElcMilestones: boolean;
-  onElcMilestonesChange: (show: boolean) => void;
+  entitlement: SubscriptionEntitlementContext;
 }) {
-  const phaseLabel = op.isOlmV1Extension ? "—" : getDerivedSupportPhase(op);
+  const lifecycleOp = getLifecycleEvaluationRow(op, PROTOTYPE_CLUSTER_OCP_LIFECYCLE);
+  const phaseLabel = op.isOlmV1Extension ? "—" : getEntitlementAwareSupportPhase(lifecycleOp, entitlement);
+  const eusMismatch = hasPlatformAlignedEusMismatch(op, PROTOTYPE_CLUSTER_OCP_LIFECYCLE);
   const popoverAriaLabel = op.isOlmV1Extension
     ? "Support phase and OLM v1 extensions"
     : `Operator lifecycle for ${op.name}`;
   const bodyContent = op.isOlmV1Extension ? (
     <OlmV1ExtensionSupportPopoverContents />
   ) : (
-    <SupportLifecyclePopoverContents
-      op={op}
-      showElcMilestones={showElcMilestones}
-      onElcMilestonesChange={onElcMilestonesChange}
-    />
+    <SupportLifecyclePopoverContents op={op} entitlement={entitlement} />
   );
 
   return (
@@ -1212,6 +1277,15 @@ function InstalledOperatorSupportPhaseCell({
       flexWrap={{ default: "nowrap" }}
       style={{ minWidth: 0 }}
     >
+      {eusMismatch ? (
+        <Tooltip content={PLATFORM_ALIGNED_EUS_MISMATCH_DISCLAIMER}>
+          <span className="ocs-io-platform-alignment-warning" tabIndex={0}>
+            <Icon status="warning" aria-label="Platform alignment date mismatch">
+              <ExclamationTriangleIcon aria-hidden />
+            </Icon>
+          </span>
+        </Tooltip>
+      ) : null}
       <Popover
         key={`${op.name}-lifecycle`}
         aria-label={popoverAriaLabel}
@@ -1237,31 +1311,62 @@ function InstalledOperatorSupportPhaseCell({
   );
 }
 
-function InstalledOperatorSupportPhaseEndCell({ op }: { op: OperatorRow }) {
+function InstalledOperatorSupportPhaseEndCell({
+  op,
+  entitlement,
+}: {
+  op: OperatorRow;
+  entitlement: SubscriptionEntitlementContext;
+}) {
   if (op.isOlmV1Extension || op.isUnsupported) {
     return <Content component="small">—</Content>;
   }
-  const raw = getCurrentPhaseEndDateRaw(op);
-  const formatted = raw ? formatLifecycleDateShort(raw) : "—";
-  if (formatted === "—") {
-    return <Content component="small">—</Content>;
-  }
-  const urgency = getCurrentPhaseDateLabelUrgency(op);
+
+  const lifecycleOp = getLifecycleEvaluationRow(op, PROTOTYPE_CLUSTER_OCP_LIFECYCLE);
+  const eusMismatch = hasPlatformAlignedEusMismatch(op, PROTOTYPE_CLUSTER_OCP_LIFECYCLE);
+  const urgency = getEntitlementAwarePhaseDateLabelUrgency(lifecycleOp, entitlement);
   const color = phaseDateLabelPfColor(urgency);
 
+  const alignedLabel = `Aligned with OCP ${PROTOTYPE_CLUSTER_OCP_LIFECYCLE.ocpVersionLabel}`;
+  const showAlignedLabel = op.isPlatformAligned && !eusMismatch;
+  const raw = getEntitlementAwarePhaseEndDateRaw(lifecycleOp, entitlement);
+  const formatted = raw ? formatLifecycleDateShort(raw) : "—";
+  const displayText = showAlignedLabel ? alignedLabel : formatted;
+
+  if (displayText === "—") {
+    return <Content component="small">—</Content>;
+  }
+
+  const labelNode = (
+    <Label isCompact variant="outline" color={color} className="ocs-io-phase-end-date-label">
+      {displayText}
+    </Label>
+  );
+
   return (
-    <Tooltip
-      content={<PhaseEndDateTooltipBody op={op} urgency={urgency} />}
-      position="top"
-      maxWidth="24rem"
-      isContentLeftAligned
-    >
-      <span className="ocs-io-phase-end-date-tooltip-target" tabIndex={0}>
-        <Label isCompact variant="outline" color={color} className="ocs-io-phase-end-date-label">
-          {formatted}
-        </Label>
-      </span>
-    </Tooltip>
+    <Flex alignItems={{ default: "alignItemsCenter" }} gap={{ default: "gapSm" }} flexWrap={{ default: "nowrap" }}>
+      {eusMismatch ? (
+        <Tooltip content={PLATFORM_ALIGNED_EUS_MISMATCH_DISCLAIMER}>
+          <span className="ocs-io-platform-alignment-warning" tabIndex={0}>
+            <Icon status="warning" aria-label="Platform alignment date mismatch">
+              <ExclamationTriangleIcon aria-hidden />
+            </Icon>
+          </span>
+        </Tooltip>
+      ) : null}
+      <Tooltip
+        content={
+          <PhaseEndDateTooltipBody op={op} urgency={urgency} entitlement={entitlement} />
+        }
+        position="top"
+        maxWidth="24rem"
+        isContentLeftAligned
+      >
+        <span className="ocs-io-phase-end-date-tooltip-target" tabIndex={0}>
+          {labelNode}
+        </span>
+      </Tooltip>
+    </Flex>
   );
 }
 
@@ -1289,14 +1394,19 @@ export default function InstalledOperatorsPage() {
   const [columnModalDraft, setColumnModalDraft] = useState<Record<TableColumnKey, boolean>>(
     () => ({ ...RESTORE_DEFAULT_VISIBLE })
   );
-  /** Interim: customer opt-in to surface EUS / ELC milestone rows in lifecycle popovers (pre sub-cluster entitlement). */
-  const [showElcMilestones, setShowElcMilestones] = useState(false);
+  /** SKU-blind interim: admin-selected subscription tier drives lifecycle columns and popovers (OCPSTRAT-2957). */
+  const [subscriptionEntitlement, setSubscriptionEntitlement] =
+    useState<SubscriptionEntitlementContext>("standard");
   const navigate = useNavigate();
-  const { demoVariant } = useClusterUpdateDemoVariant();
+  const { demoVariant, setDemoVariant } = useClusterUpdateDemoVariant();
   const { setCurrentPage } = useChat();
   const isGlass = usePatternFlyGlassActive();
   /** Agent-led demo (`agent-only`): AI Assessment + summary cards. Manual updates demo hides them. */
   const showAssessmentAndOverviewCards = demoVariant === "agent-only";
+
+  useEffect(() => {
+    setDemoVariant("manual-and-agent");
+  }, [setDemoVariant]);
 
   const openChatbot = useCallback((context: string) => {
     setChatbotContext(context);
@@ -1371,8 +1481,8 @@ export default function InstalledOperatorsPage() {
   }, [operators]);
 
   const searchAndAttributeFiltered = useMemo(
-    () => operatorsWithCompat.filter((op) => rowMatchesDataViewFilters(op, filters)),
-    [operatorsWithCompat, filters]
+    () => operatorsWithCompat.filter((op) => rowMatchesDataViewFilters(op, filters, subscriptionEntitlement)),
+    [operatorsWithCompat, filters, subscriptionEntitlement]
   );
 
   const tabFilteredOperators = useMemo(
@@ -1384,8 +1494,8 @@ export default function InstalledOperatorsPage() {
   );
 
   const sortedFilteredOperators = useMemo(
-    () => sortOperatorRows(tabFilteredOperators, sortColumn, sortDirection),
-    [tabFilteredOperators, sortColumn, sortDirection]
+    () => sortOperatorRows(tabFilteredOperators, sortColumn, sortDirection, subscriptionEntitlement),
+    [tabFilteredOperators, sortColumn, sortDirection, subscriptionEntitlement]
   );
 
   const pagedOperators = useMemo(() => {
@@ -1395,7 +1505,7 @@ export default function InstalledOperatorsPage() {
 
   useEffect(() => {
     setPage(1);
-  }, [filters, perPage, installKindTab]);
+  }, [filters, perPage, installKindTab, subscriptionEntitlement]);
 
   useEffect(() => {
     if (installKindTab === "olmv1") {
@@ -1605,10 +1715,13 @@ export default function InstalledOperatorsPage() {
                           </Flex>
                           <Title headingLevel="h3" size="4xl">
                             {
-                              operators.filter(
-                                (o) =>
-                                  !o.isOlmV1Extension && getDerivedSupportPhase(o) === "End of life"
-                              ).length
+                              operators.filter((o) => {
+                                if (o.isOlmV1Extension) return false;
+                                const row = getLifecycleEvaluationRow(o, PROTOTYPE_CLUSTER_OCP_LIFECYCLE);
+                                return (
+                                  getEntitlementAwareSupportPhase(row, subscriptionEntitlement) === "End of life"
+                                );
+                              }).length
                             }
                           </Title>
                         </Flex>
@@ -1678,6 +1791,60 @@ export default function InstalledOperatorsPage() {
                     values={filters}
                     onChange={(_filterId, partial) => onSetFilters(partial as Partial<IoListFilters>)}
                     breakpoint="xl"
+                    afterFiltersContent={
+                      showOlmV0ListColumns ? (
+                        <ToolbarItem className="ocs-io-subscription-entitlement-toolbar-item">
+                          <Flex
+                            direction={{ default: "row" }}
+                            gap={{ default: "gapSm" }}
+                            alignItems={{ default: "alignItemsCenter" }}
+                            flexWrap={{ default: "nowrap" }}
+                          >
+                            <FormSelect
+                              id="installed-operators-subscription-entitlement"
+                              aria-label="Subscription entitlement"
+                              value={subscriptionEntitlement}
+                              onChange={(_event, value) =>
+                                setSubscriptionEntitlement(value as SubscriptionEntitlementContext)
+                              }
+                              style={{ minWidth: "min(20rem, 36vw)" }}
+                            >
+                              {SUBSCRIPTION_ENTITLEMENT_OPTIONS.map((opt) => (
+                                <FormSelectOption key={opt.value} value={opt.value} label={opt.label} />
+                              ))}
+                            </FormSelect>
+                            <Popover
+                              aria-label="About subscription entitlement"
+                              headerContent={<Title headingLevel="h6">Subscription entitlement</Title>}
+                              bodyContent={
+                                <Content component="div" className="pf-v6-u-font-size-sm">
+                                  <p className="pf-v6-u-mb-md">
+                                    OpenShift 5.0 cannot read your SKU. Select the tier that best matches your
+                                    subscription so support phase and end date columns use the correct maintenance or
+                                    extended life cycle boundaries.
+                                  </p>
+                                  <p className="pf-v6-u-mb-0">
+                                    Layered and third-party operators always use their own published dates. Sub-cluster
+                                    entitlement (OCPSTRAT-2957) will replace this control in a future release.
+                                  </p>
+                                </Content>
+                              }
+                              position="bottom"
+                              maxWidth="min(24rem, 92vw)"
+                              appendTo={() => document.body}
+                            >
+                              <Button
+                                variant="plain"
+                                type="button"
+                                aria-label="About subscription entitlement"
+                                hasNoPadding
+                                icon={<Info aria-hidden />}
+                              />
+                            </Popover>
+                          </Flex>
+                        </ToolbarItem>
+                      ) : null
+                    }
                     midContent={
                       <ToolbarGroup
                         className="ocs-io-filters-mid-actions"
@@ -1719,51 +1886,6 @@ export default function InstalledOperatorsPage() {
                             Browse Software Catalog
                           </Button>
                         </ToolbarItem>
-                        {showOlmV0ListColumns ? (
-                          <ToolbarItem>
-                            <Flex
-                              direction={{ default: "row" }}
-                              gap={{ default: "gapSm" }}
-                              alignItems={{ default: "alignItemsCenter" }}
-                              flexWrap={{ default: "nowrap" }}
-                            >
-                              <Switch
-                                id="installed-operators-elc-opt-in"
-                                label="Include ELC milestones"
-                                isChecked={showElcMilestones}
-                                onChange={(_event, checked) => setShowElcMilestones(checked)}
-                              />
-                              <Popover
-                                aria-label="About including ELC milestones"
-                                headerContent={<Title headingLevel="h6">ELC milestones opt-in</Title>}
-                                bodyContent={
-                                  <Content component="div" className="pf-v6-u-font-size-sm">
-                                    <p className="pf-v6-u-mb-md">
-                                      Opt in to show published <strong>EUS</strong> and extended life cycle milestone
-                                      dates in operator lifecycle details. EUS alignment follows{" "}
-                                      <strong>PLCC</strong> as the source of truth; not all operators are EUS-aligned
-                                      (for example standalone layered products may differ from the cluster).
-                                    </p>
-                                    <p className="pf-v6-u-mb-0">
-                                      Fuller behavior is expected to depend on sub-cluster entitlement checking.
-                                    </p>
-                                  </Content>
-                                }
-                                position="bottom"
-                                maxWidth="min(22rem, 92vw)"
-                                appendTo={() => document.body}
-                              >
-                                <Button
-                                  variant="plain"
-                                  type="button"
-                                  aria-label="About including ELC milestones"
-                                  hasNoPadding
-                                  icon={<Info aria-hidden />}
-                                />
-                              </Popover>
-                            </Flex>
-                          </ToolbarItem>
-                        ) : null}
                       </ToolbarGroup>
                     }
                   >
@@ -1998,14 +2120,16 @@ export default function InstalledOperatorsPage() {
                             <Td dataLabel="Support phase">
                               <InstalledOperatorSupportPhaseCell
                                 op={op}
-                                showElcMilestones={showElcMilestones}
-                                onElcMilestonesChange={setShowElcMilestones}
+                                entitlement={subscriptionEntitlement}
                               />
                             </Td>
                           )}
                           {showOlmV0ListColumns && visibleColumns.supportPhaseEnd && (
                             <Td dataLabel="Current phase end date" modifier="nowrap">
-                              <InstalledOperatorSupportPhaseEndCell op={op} />
+                              <InstalledOperatorSupportPhaseEndCell
+                                op={op}
+                                entitlement={subscriptionEntitlement}
+                              />
                             </Td>
                           )}
                           {visibleColumns.lastUpdated && (
