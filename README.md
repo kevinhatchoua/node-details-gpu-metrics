@@ -1,10 +1,26 @@
-# OCP 5.x Operator Management & OLM — UX prototype
+# Node details — GPU metrics (OpenShift Console prototype)
 
-Interactive React/TypeScript prototype for OpenShift Container Platform **5.x** operator catalog, installed operators, and related management flows. Built with **Vite**, **Tailwind CSS v4**, and **React Router v7**.
+Interactive React/TypeScript prototype for **Node details** with **GPU metrics**, **node conditions**, and OCP-style **Nodes** / **Pods** list and detail pages. Built with **Vite**, **PatternFly 6**, and **React Router v7**.
 
-**Primary tracking:** [HPUX-1480](https://redhat.atlassian.net/browse/HPUX-1480) (Atlassian / Jira).
+**Live demo:** [https://node-details-gpu-metrics.vercel.app](https://node-details-gpu-metrics.vercel.app)
 
-This repository is the **standalone** home for this work (separate from the cluster-update–only prototype repo). Historical lineage traces to shared UX exploration with `ocp5-cluster-update-experience`; ongoing Operator Management / OLM UX changes land here.
+| Surface | Link |
+|--------|------|
+| Nodes list | [/compute](https://node-details-gpu-metrics.vercel.app/compute) |
+| GPU node details (sample) | [/compute/nodes/ip-10-0-24-42.us-east-2.compute.internal](https://node-details-gpu-metrics.vercel.app/compute/nodes/ip-10-0-24-42.us-east-2.compute.internal) |
+| Pods list | [/workloads/pods](https://node-details-gpu-metrics.vercel.app/workloads/pods) |
+
+**Repository:** [github.com/kevinhatchoua/node-details-gpu-metrics](https://github.com/kevinhatchoua/node-details-gpu-metrics)
+
+**Related:** [CONSOLE-5297](https://issues.redhat.com/browse/CONSOLE-5297) (GPU metrics on Node Details). This repo also includes the broader OCP 5.x Operator Management / OLM prototype from [HPUX-1480](https://redhat.atlassian.net/browse/HPUX-1480).
+
+---
+
+## OCP 5.x Operator Management & OLM (included in this prototype)
+
+Interactive React/TypeScript prototype for OpenShift Container Platform **5.x** operator catalog, installed operators, and related management flows.
+
+This repository is a **standalone** fork for Node details / GPU metrics demos. Historical lineage traces to `ocp5-olm-update-experience` and shared UX exploration with `ocp5-cluster-update-experience`.
 
 ### Problem statement
 
